@@ -1,5 +1,6 @@
 package mors.museumguide;
 
+import mors.museumguide.entity.ModEntityTypes;
 import net.fabricmc.api.ModInitializer;
 
 import org.slf4j.Logger;
@@ -20,5 +21,7 @@ public class MuseumGuide implements ModInitializer {
 		// Proceed with mild caution.
 
 		LOGGER.info("Hello Fabric world!");
+		ModEntityTypes.registerModEntityTypes();
+		ModEntityTypes.registerAttributes();
 	}
 }

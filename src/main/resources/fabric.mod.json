@@ -18,6 +18,9 @@
 		"main": [
 			"mors.museumguide.MuseumGuide"
 		],
+		"client": [
+			"mors.museumguide.client.MuseumGuideClient"
+		],
 		"fabric-datagen": [
 			"mors.museumguide.MuseumGuideDataGenerator"
 		]
