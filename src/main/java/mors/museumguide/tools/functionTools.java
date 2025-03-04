@@ -5,6 +5,7 @@ package mors.museumguide.tools;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import mors.museumguide.entity.guideEntity;
+import mors.museumguide.logic.followPlayer;
 import mors.museumguide.logic.guideInteractionTracker;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -219,7 +220,8 @@ public class functionTools {
             System.out.println("No interacted player available");
             return "No player available to follow";
         }
-        return makeLastInteractedGuideFollow(lastInteractedPlayer);
+        makeLastInteractedGuideFollow(lastInteractedPlayer);
+        return "Following the player!";
     }
 
     public String makeLastInteractedGuideFollow(ServerPlayerEntity player) {
@@ -243,5 +245,34 @@ public class functionTools {
     @Tool("Calculate the square root of a number")
     public Double squareRoot(Double number) {
         return Math.sqrt(number);
+    }
+
+
+
+    @Tool("Stop following the player")
+    public String stopFollowingWrapper()  {
+        System.out.println("stopFollowingWrapper() was called");
+
+        if (lastInteractedPlayer == null) {
+            System.out.println("No interacted player available");
+            return "No player available to stop following";
+        }
+        stopFollowing(lastInteractedPlayer);
+        return "Stopped following the player!";
+    }
+
+
+    public void stopFollowing(ServerPlayerEntity player) {
+        if (player == null) {
+            System.out.println("No player specified");
+        }
+
+        guideEntity guide = getLastInteractedGuide(player);
+
+        if (guide == null) {
+            System.out.println("Please interact with a guide entity first!");
+        }
+        guide.removeFollowPlayer(player);
+        System.out.println("The guide is no longer following you.");
     }
 }

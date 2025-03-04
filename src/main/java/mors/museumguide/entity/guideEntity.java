@@ -33,11 +33,6 @@ public class guideEntity extends PathAwareEntity {
     }
 
     @Override
-    protected void initGoals() {
-        this.goalSelector.add(0, new WanderAroundGoal(this, 1));
-    }
-
-    @Override
     public ActionResult interactMob(PlayerEntity player, Hand hand) {
         if (player instanceof ServerPlayerEntity serverPlayer) {
             guideInteractionTracker.trackInteraction(serverPlayer, this);
@@ -72,6 +67,11 @@ public class guideEntity extends PathAwareEntity {
     }
     public guideEntity getGuide()   {
         return this;
+    }
+    public void removeFollowPlayer(ServerPlayerEntity player) {
+        this.goalSelector.getGoals().stream()
+                .filter(prioritizedGoal -> prioritizedGoal.getGoal() instanceof followPlayer)
+                .forEach(prioritizedGoal -> this.goalSelector.remove(prioritizedGoal.getGoal()));
     }
 
 }
