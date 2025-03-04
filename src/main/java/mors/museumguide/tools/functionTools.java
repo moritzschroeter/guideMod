@@ -24,10 +24,10 @@ import static mors.museumguide.logic.guideInteractionTracker.getLastInteractedGu
 
 public class functionTools {
 
-    private ServerPlayerEntity lastInteractedPlayer;
+    private static ServerPlayerEntity lastInteractedPlayer;
 
-    public void setLastInteraction(ServerPlayerEntity player) {
-        this.lastInteractedPlayer = player;
+    public static void setLastInteraction(ServerPlayerEntity player) {
+        lastInteractedPlayer = player;
     }
 
     private World getPlayerWorld() {
@@ -211,26 +211,37 @@ public class functionTools {
         return "Function calling is working! Received: " + message;
     }
 
-    //@Tool("Follow the player")
-    public String makeLastInteractedGuideFollow(@P("Player entity") ServerPlayerEntity player) {
+    @Tool("Function that lets you follow the player when they are moving.")
+    public String followWrapper() {
+        System.out.println("followWrapper() was called");
+
+        if (lastInteractedPlayer == null) {
+            System.out.println("No interacted player available");
+            return "No player available to follow";
+        }
+        return makeLastInteractedGuideFollow(lastInteractedPlayer);
+    }
+
+    public String makeLastInteractedGuideFollow(ServerPlayerEntity player) {
+        if (player == null) {
+            return "No player specified";
+        }
+
         guideEntity guide = guideInteractionTracker.getLastInteractedGuide(player);
 
         if (guide == null) {
             return "Please interact with a guide entity first!";
         }
 
-        Entity entity = getLastInteractedGuide(player);
-
-        if (entity instanceof guideEntity) {
+        if (guide instanceof guideEntity) {
             guide.setFollowPlayer(player);
             return "The guide you last interacted with is now following you.";
         } else {
             return "Couldn't find the guide you interacted with.";
         }
     }
-
-    @Tool("Follow the player")
-    public void followWrapper() {
-        makeLastInteractedGuideFollow(lastInteractedPlayer);
+    @Tool("Calculate the square root of a number")
+    public Double squareRoot(Double number) {
+        return Math.sqrt(number);
     }
 }

@@ -14,11 +14,11 @@ import static java.time.Duration.ofSeconds;
 
 public class initLLM {
     private final String BASE_URL = "http://localhost:11434";
-    private final String MODEL_NAME = "llama3.2:3b";
+    private final String MODEL_NAME = "llama3.1";
     private Assistant assistant;
 
     public interface Assistant {
-        @SystemMessage("Du bist eine Museumsführer in einem Museum. Deine Antworten sollten kurz aber Informationsreich sein. Beschränke deine Antworten auf 2 bis 3 Sätze. Antworte nicht in Stichpunkten.")
+        //@SystemMessage("Du bist eine Museumsführer in einem Museum. Deine Antworten sollten kurz aber Informationsreich sein. Beschränke deine Antworten auf 2 bis 3 Sätze. Antworte nicht in Stichpunkten.")
         String chat(String userMessage);
     }
 

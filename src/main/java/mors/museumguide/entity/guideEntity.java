@@ -4,6 +4,7 @@ import mors.museumguide.client.MuseumGuideClient;
 import mors.museumguide.llm.initLLM;
 import mors.museumguide.logic.followPlayer;
 import mors.museumguide.logic.guideInteractionTracker;
+import mors.museumguide.tools.functionTools;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ai.goal.FollowOwnerGoal;
 import net.minecraft.entity.ai.goal.WanderAroundGoal;
@@ -38,6 +39,11 @@ public class guideEntity extends PathAwareEntity {
 
     @Override
     public ActionResult interactMob(PlayerEntity player, Hand hand) {
+        if (player instanceof ServerPlayerEntity serverPlayer) {
+            guideInteractionTracker.trackInteraction(serverPlayer, this);
+            functionTools.setLastInteraction(serverPlayer); // Store the last interacted player
+        }
+
         if (!player.getWorld().isClient && hand == Hand.MAIN_HAND) {
             // Track this interaction
             if (player instanceof ServerPlayerEntity serverPlayer) {
