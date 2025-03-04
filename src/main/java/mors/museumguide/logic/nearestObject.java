@@ -1,5 +1,6 @@
 package mors.museumguide.logic;
 
+import dev.langchain4j.agent.tool.Tool;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.entity.Entity;
@@ -20,6 +21,7 @@ public class nearestObject {
      * @param radius The search radius
      * @return Optional containing the nearest SignBlockEntity if found
      */
+    @Tool("Finds the nearest sign block entity to the given entity within the search radius")
     public static Optional<SignBlockEntity> findNearestSign(Entity entity, int radius) {
         World world = entity.getWorld();
         BlockPos entityPos = entity.getBlockPos();
@@ -89,6 +91,7 @@ public class nearestObject {
      * @param <T> The type of entity
      * @return The nearest entity if found
      */
+    @Tool("Find nearby entities of a specific type within a box around the source entity")
     public static <T extends Entity> Optional<T> findNearestEntity(
             Entity sourceEntity, double radius, Class<T> entityClass) {
         World world = sourceEntity.getWorld();

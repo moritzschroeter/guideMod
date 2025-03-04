@@ -4,6 +4,8 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.service.SystemMessage;
+import mors.museumguide.logic.nearestObject;
 import mors.museumguide.tools.functionTools;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -16,6 +18,7 @@ public class initLLM {
     private Assistant assistant;
 
     public interface Assistant {
+        @SystemMessage("Du bist eine Museumsführer in einem Museum. Deine Antworten sollten kurz aber Informationsreich sein. Beschränke deine Antworten auf 2 bis 3 Sätze. Antworte nicht in Stichpunkten.")
         String chat(String userMessage);
     }
 
