@@ -69,9 +69,11 @@ public class guideEntity extends PathAwareEntity {
         return this;
     }
     public void removeFollowPlayer(ServerPlayerEntity player) {
-        this.goalSelector.getGoals().stream()
-                .filter(prioritizedGoal -> prioritizedGoal.getGoal() instanceof followPlayer)
-                .forEach(prioritizedGoal -> this.goalSelector.remove(prioritizedGoal.getGoal()));
+        this.goalSelector.getGoals().removeIf(prioritizedGoal ->
+                prioritizedGoal.getGoal() instanceof followPlayer
+        );
     }
+
+
 
 }

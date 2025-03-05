@@ -212,7 +212,7 @@ public class functionTools {
         return "Function calling is working! Received: " + message;
     }
 
-    @Tool("Function that lets you follow the player when they are moving.")
+    @Tool("Follow the player")
     public String followWrapper() {
         System.out.println("followWrapper() was called");
 
