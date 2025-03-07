@@ -13,9 +13,15 @@ import java.util.concurrent.CompletableFuture;
 import static java.time.Duration.ofSeconds;
 
 public class initLLM {
-    private final String BASE_URL = "http://localhost:11434";
-    private final String MODEL_NAME = "llama3.1:latest";
+
+    private static final String BASE_URL = "http://localhost:11434";
+    private static String MODEL_NAME = "llama3.1:latest";
     private Assistant assistant;
+    private static String[] modelNames;
+
+    public static String[] getModelNames() {
+        return modelNames;
+    }
 
     public interface Assistant {
         //@SystemMessage("Du bist eine Museumsführer in einem Museum. Deine Antworten sollten kurz aber Informationsreich sein. Beschränke deine Antworten auf 2 bis 3 Sätze. Antworte nicht in Stichpunkten.")
@@ -67,4 +73,20 @@ public class initLLM {
             return processMessage(userMessage);
         });
     }
+    public static String getBASE_URL() {
+        return BASE_URL;
+    }
+
+    public static void setModelNames(String[] modelNames) {
+        initLLM.modelNames = modelNames;
+    }
+    public static void setModelName(String modelName) {
+        initLLM.MODEL_NAME = modelName;
+    }
+    public static String getModelName()    {
+        return MODEL_NAME;
+    }
+
+
+
 }

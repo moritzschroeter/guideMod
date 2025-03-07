@@ -1,6 +1,5 @@
 package mors.museumguide.client;
 
-//import mors.museumguide.command.findSignCommand;
 import mors.museumguide.command.ToolsCommand;
 import mors.museumguide.entity.ModEntityTypes;
 import mors.museumguide.llm.chatHandler;
@@ -21,16 +20,13 @@ public class MuseumGuideClient implements ClientModInitializer {
         guideEntityModelLayers.registerModelLayers();
         EntityRendererRegistry.register(ModEntityTypes.GUIDE, guideEntityRenderer::new);
 
-        // Initialize LLM
-        initializeLLM();
         chatHandler.getChatMessage();
         // In MuseumGuideClient.java
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 ToolsCommand.register(dispatcher, registryAccess, environment));
 
-    }
 
-    private void initializeLLM() {
+
         try {
             System.out.println("Initializing LLM service...");
             llmInstance = new initLLM();

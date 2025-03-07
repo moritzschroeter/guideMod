@@ -4,6 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import mors.museumguide.entity.guideEntity;
+import mors.museumguide.llm.initLLM;
+import mors.museumguide.llm.ollamaHandler;
 import mors.museumguide.logic.guideInteractionTracker;
 import mors.museumguide.tools.functionTools;
 import net.minecraft.command.CommandRegistryAccess;
@@ -11,6 +13,8 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+
+import java.io.IOException;
 
 public class ToolsCommand {
 
@@ -107,31 +111,31 @@ public class ToolsCommand {
                         )
                         .then(CommandManager.literal("move")
                                 .then(CommandManager.argument("x", IntegerArgumentType.integer())
-                                .then(CommandManager.argument("y", IntegerArgumentType.integer())
-                                .then(CommandManager.argument("z", IntegerArgumentType.integer())
-                                    .executes(context -> {
-                                    ServerCommandSource source = context.getSource();
-                                    ServerPlayerEntity player = source.getPlayerOrThrow();
+                                        .then(CommandManager.argument("y", IntegerArgumentType.integer())
+                                                .then(CommandManager.argument("z", IntegerArgumentType.integer())
+                                                        .executes(context -> {
+                                                            ServerCommandSource source = context.getSource();
+                                                            ServerPlayerEntity player = source.getPlayerOrThrow();
 
-                                    functionTools tools = new functionTools();
-                                    tools.setLastInteraction(player);
-                                    int x = IntegerArgumentType.getInteger(context, "x");
-                                    int y = IntegerArgumentType.getInteger(context, "y");
-                                    int z = IntegerArgumentType.getInteger(context, "z");
+                                                            functionTools tools = new functionTools();
+                                                            tools.setLastInteraction(player);
+                                                            int x = IntegerArgumentType.getInteger(context, "x");
+                                                            int y = IntegerArgumentType.getInteger(context, "y");
+                                                            int z = IntegerArgumentType.getInteger(context, "z");
 
-                                    // Find nearby guide entity or spawn one if none exists
-                                    guideEntity guide = guideInteractionTracker.getLastInteractedGuide(player);
-                                    if (guide != null) {
-                                        tools.move(x, y , z);
-                                        source.sendFeedback(() -> Text.literal("The guide is now moving to" + x + ", " + y + ", " + z), false);
-                                    } else {
-                                        source.sendFeedback(() -> Text.literal("Failed to find or spawn a guide entity."), false);
-                                    }
+                                                            // Find nearby guide entity or spawn one if none exists
+                                                            guideEntity guide = guideInteractionTracker.getLastInteractedGuide(player);
+                                                            if (guide != null) {
+                                                                tools.move(x, y , z);
+                                                                source.sendFeedback(() -> Text.literal("The guide is now moving to" + x + ", " + y + ", " + z), false);
+                                                            } else {
+                                                                source.sendFeedback(() -> Text.literal("Failed to find or spawn a guide entity."), false);
+                                                            }
 
-                                    return 1;
-                                })
-                        )
-        )
+                                                            return 1;
+                                                        })
+                                                )
+                                        )
                                 )
                         )
                         .then(CommandManager.literal("moveToNearestSign")
@@ -148,6 +152,84 @@ public class ToolsCommand {
                                         source.sendFeedback(() -> Text.literal("Moving guide to nearest sign"), false);
                                     }
                                     return 0;
+                                }))
+
+        );
+        dispatcher.register(
+                CommandManager.literal("llm")
+                        .then(CommandManager.literal("getModels")
+                                .executes(context -> {
+                                    ServerCommandSource source = context.getSource();
+                                    ServerPlayerEntity player = source.getPlayerOrThrow();
+
+                                    ollamaHandler handler = new ollamaHandler();
+                                    try {
+                                        handler.getModels();
+                                    } catch (IOException | InterruptedException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    source.sendFeedback(() -> Text.literal("executed"), false);
+                                    return 1;
+                                })
+                        )
+                        .then(CommandManager.literal("modelList")
+                                .then(CommandManager.argument("name", StringArgumentType.greedyString()))
+                                .executes(context -> {
+                                    ServerCommandSource source = context.getSource();
+                                    ServerPlayerEntity player = source.getPlayerOrThrow();
+
+                                    ollamaHandler handler = new ollamaHandler();
+                                    try {
+                                        handler.modelList();
+                                    } catch (IOException | InterruptedException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    source.sendFeedback(() -> Text.literal("Model list fetched"), false);
+                                    return 1;
+                                })
+                        )
+                        .then(CommandManager.literal("setModelName")
+                                .then(CommandManager.argument("modelName", StringArgumentType.greedyString())
+                                        .suggests((context, builder) -> {
+                                            for (String model : initLLM.getModelNames()) {
+                                                builder.suggest(model);
+                                            }
+                                            return builder.buildFuture();
+                                        })
+                                        .executes(context -> {
+                                            ServerCommandSource source = context.getSource();
+                                            ServerPlayerEntity player = source.getPlayerOrThrow();
+                                            String modelName = StringArgumentType.getString(context, "modelName");
+
+                                            ollamaHandler handler = new ollamaHandler();
+                                            try {
+                                                handler.setModelName(modelName);
+                                            } catch (IOException | InterruptedException e) {
+                                                throw new RuntimeException(e);
+                                            }
+                                            source.sendFeedback(() -> Text.literal("Model set to " + modelName), false);
+                                            return 1;
+                                        })
+                                )
+                        )
+                        .then(CommandManager.literal("printModel")
+                                .executes(context -> {
+                                    ServerCommandSource source = context.getSource();
+                                    ServerPlayerEntity player = source.getPlayerOrThrow();
+
+                                    ollamaHandler handler = new ollamaHandler();
+
+                                    handler.printModel();
+
+                                    return 1;
+                                }))
+                        .then(CommandManager.literal("resetModel")
+                                .executes(context -> {
+                                    ServerCommandSource source = context.getSource();
+                                    ServerPlayerEntity player = source.getPlayerOrThrow();
+
+                                    ollamaHandler handler = new ollamaHandler();
+                                    return 1;
                                 }))
         );
     }
