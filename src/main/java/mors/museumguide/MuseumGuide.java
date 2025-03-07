@@ -3,6 +3,7 @@ package mors.museumguide;
 import mors.museumguide.entity.ModEntityTypes;
 import net.fabricmc.api.ModInitializer;
 
+import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -14,7 +14,7 @@ import static java.time.Duration.ofSeconds;
 
 public class initLLM {
     private final String BASE_URL = "http://localhost:11434";
-    private final String MODEL_NAME = "granite3.2:8b";
+    private final String MODEL_NAME = "llama3.1:latest";
     private Assistant assistant;
 
     public interface Assistant {

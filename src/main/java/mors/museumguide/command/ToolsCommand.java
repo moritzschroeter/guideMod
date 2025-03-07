@@ -105,6 +105,50 @@ public class ToolsCommand {
                                     return 1;
                                 })
                         )
+                        .then(CommandManager.literal("move")
+                                .then(CommandManager.argument("x", IntegerArgumentType.integer())
+                                .then(CommandManager.argument("y", IntegerArgumentType.integer())
+                                .then(CommandManager.argument("z", IntegerArgumentType.integer())
+                                    .executes(context -> {
+                                    ServerCommandSource source = context.getSource();
+                                    ServerPlayerEntity player = source.getPlayerOrThrow();
+
+                                    functionTools tools = new functionTools();
+                                    tools.setLastInteraction(player);
+                                    int x = IntegerArgumentType.getInteger(context, "x");
+                                    int y = IntegerArgumentType.getInteger(context, "y");
+                                    int z = IntegerArgumentType.getInteger(context, "z");
+
+                                    // Find nearby guide entity or spawn one if none exists
+                                    guideEntity guide = guideInteractionTracker.getLastInteractedGuide(player);
+                                    if (guide != null) {
+                                        tools.move(x, y , z);
+                                        source.sendFeedback(() -> Text.literal("The guide is now moving to" + x + ", " + y + ", " + z), false);
+                                    } else {
+                                        source.sendFeedback(() -> Text.literal("Failed to find or spawn a guide entity."), false);
+                                    }
+
+                                    return 1;
+                                })
+                        )
+        )
+                                )
+                        )
+                        .then(CommandManager.literal("moveToNearestSign")
+                                .executes(context -> {
+                                    ServerCommandSource source = context.getSource();
+                                    ServerPlayerEntity player = source.getPlayerOrThrow();
+
+                                    functionTools tools = new functionTools();
+                                    tools.setLastInteraction(player);
+
+                                    guideEntity guide = guideInteractionTracker.getLastInteractedGuide(player);
+                                    if (guide != null) {
+                                        tools.moveToNearestSign();
+                                        source.sendFeedback(() -> Text.literal("Moving guide to nearest sign"), false);
+                                    }
+                                    return 0;
+                                }))
         );
     }
 }

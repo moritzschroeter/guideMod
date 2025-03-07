@@ -1,28 +1,30 @@
 package mors.museumguide.entity;
 
-import mors.museumguide.client.MuseumGuideClient;
-import mors.museumguide.llm.initLLM;
 import mors.museumguide.logic.followPlayer;
 import mors.museumguide.logic.guideInteractionTracker;
 import mors.museumguide.tools.functionTools;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.ai.goal.FollowOwnerGoal;
-import net.minecraft.entity.ai.goal.WanderAroundGoal;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.PathAwareEntity;
-import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+
+import java.util.Objects;
 
 public class guideEntity extends PathAwareEntity {
 
+    private boolean startedMoving;
+
     public guideEntity(EntityType<? extends PathAwareEntity> entityType, World world) {
         super(entityType, world);
+        this.startedMoving = false;
     }
 
     public static DefaultAttributeContainer.Builder createCubeAttributes() {
@@ -55,6 +57,7 @@ public class guideEntity extends PathAwareEntity {
 
         return ActionResult.SUCCESS;
     }
+
     public void setFollowPlayer(ServerPlayerEntity player) {
         // Remove any existing follow goals first
         this.goalSelector.getGoals().stream()
@@ -65,15 +68,42 @@ public class guideEntity extends PathAwareEntity {
         followPlayer followGoal = new followPlayer(player, this, 1.0);
         this.goalSelector.add(1, followGoal);
     }
-    public guideEntity getGuide()   {
+
+    public guideEntity getGuide() {
         return this;
     }
+
     public void removeFollowPlayer(ServerPlayerEntity player) {
         this.goalSelector.getGoals().removeIf(prioritizedGoal ->
                 prioritizedGoal.getGoal() instanceof followPlayer
         );
     }
+    @Override
+    public void tick() {
+        super.tick();
 
+        if (!this.getWorld().isClient) {
+            this.updateGoalControls();
 
+            // Track movement between ticks
+            if (this.getNavigation().isIdle()) {
+                // The entity was moving but has now stopped
 
+                // Check if we've reached our destination
+                BlockPos targetPos = this.getNavigation().getTargetPos();
+                if (targetPos != null && !this.getBlockPos().equals(new BlockPos((int) targetPos.getX(), (int) targetPos.getY(), (int) targetPos.getZ()))) {
+                    // We're idle but haven't reached the target, try to resume movement
+                    this.getNavigation().startMovingTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), 1.0);
+
+                }
+            }
+        }
+    }
+    public boolean getMoving(guideEntity guide) {
+        return this.startedMoving;
+    }
+
+    public void setMoving(guideEntity guide, boolean moving) {
+        guide.startedMoving = moving;
+    }
 }

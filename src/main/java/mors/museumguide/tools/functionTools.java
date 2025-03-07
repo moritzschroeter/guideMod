@@ -1,5 +1,3 @@
-
-
 package mors.museumguide.tools;
 
 import dev.langchain4j.agent.tool.P;
@@ -7,6 +5,7 @@ import dev.langchain4j.agent.tool.Tool;
 import mors.museumguide.entity.guideEntity;
 import mors.museumguide.logic.followPlayer;
 import mors.museumguide.logic.guideInteractionTracker;
+import mors.museumguide.logic.moveToCoord;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SignBlock;
@@ -15,6 +14,7 @@ import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -25,7 +25,7 @@ import static mors.museumguide.logic.guideInteractionTracker.getLastInteractedGu
 
 public class functionTools {
 
-    private static ServerPlayerEntity lastInteractedPlayer;
+    private static ServerPlayerEntity lastInteractedPlayer = guideInteractionTracker.getPlayer();
 
     public static void setLastInteraction(ServerPlayerEntity player) {
         lastInteractedPlayer = player;
@@ -38,35 +38,35 @@ public class functionTools {
         return null;
     }
 
-    //@Tool("Find the nearest sign to the player")
+
+    @Tool("Find the nearest sign to the player")
     public String findNearestSignToPlayer() {
+        System.out.println("Find the nearest sign to the player");
         if (lastInteractedPlayer == null) {
+            System.out.println("No interacted player available");
             return "No player available";
         }
 
         BlockPos playerPos = lastInteractedPlayer.getBlockPos();
-        return findNearestSign(playerPos.getX(), playerPos.getY(), playerPos.getZ(), 50);
+        return findNearestSign(playerPos);
     }
 
     //@Tool("Get the position of the nearest sign block entity to specified coordinates")
-    public String findNearestSign(
-            @P("X coordinate of the origin") int x,
-            @P("Y coordinate of the origin") int y,
-            @P("Z coordinate of the origin") int z,
-            @P("Search radius in blocks") int radius) {
-
+    public String findNearestSign(BlockPos pos) {
         World world = getPlayerWorld();
         if (world == null) {
+            System.out.println("No interacted player available");
             return "No world available";
         }
 
-        System.out.println("Searching for signs at origin: " + x + "," + y + "," + z + " with radius: " + radius);
+        System.out.println("Searching for signs at origin: " + pos.getX() + "," + pos.getY() + "," + pos.getZ());
 
-        BlockPos origin = new BlockPos(x, y, z);
+        BlockPos origin = new BlockPos(pos.getX(), pos.getY(), pos.getZ());
         BlockPos nearestSign = null;
         double closestDistanceSq = Double.MAX_VALUE;
         int blocksChecked = 0;
         int signsFound = 0;
+        int radius = 50;
 
         // Loop over all block positions within a cube of side 2*radius+1 around origin
         for (int dx = -radius; dx <= radius; dx++) {
@@ -77,6 +77,7 @@ public class functionTools {
 
                     // Only check loaded chunks
                     if (!world.isChunkLoaded(currentPos)) {
+
                         continue;
                     }
 
@@ -185,8 +186,6 @@ public class functionTools {
                 for (int dz = -radius; dz <= radius; dz++) {
                     BlockPos currentPos = origin.add(dx, dy, dz);
 
-                    if (!world.isChunkLoaded(currentPos)) continue;
-
                     BlockState blockState = world.getBlockState(currentPos);
                     Block block = blockState.getBlock();
 
@@ -274,5 +273,50 @@ public class functionTools {
         }
         guide.removeFollowPlayer(player);
         System.out.println("The guide is no longer following you.");
+    }
+    @Tool("Move to coordinates")
+    public String move(
+            @P("x Coordinate") int x,
+            @P("y Coordinate") int y,
+            @P("z Coordinate") int z) {
+        if (lastInteractedPlayer == null) {
+            return "No player available";
+        }
+
+        World world = lastInteractedPlayer.getWorld();
+        if (world instanceof ServerWorld serverWorld) {
+            // Schedule the movement logic to run on the server thread
+            serverWorld.getServer().execute(() -> {
+                guideEntity guide = getLastInteractedGuide(lastInteractedPlayer);
+                if (guide != null) {
+                    moveToCoord move = new moveToCoord(guide, world);
+                    move.moveTo(new BlockPos(x, y, z), guide);
+                }
+            });
+            return "Moving to coordinates: " + x + ", " + y + ", " + z;
+        }
+
+        return "Could not access server world";
+    }
+    @Tool("Move to the nearest sign")
+    public String moveToNearestSign() {
+        System.out.println("moveToNearestSign() was called");
+        if (lastInteractedPlayer == null) {
+            return "No interacted player available";
+        }
+
+        World world = lastInteractedPlayer.getWorld();
+        if (world instanceof ServerWorld serverWorld) {
+            BlockPos signPos = findNearestSignPos(world, lastInteractedPlayer.getBlockPos(), 50);
+            if (signPos != null) {
+                serverWorld.getServer().execute(() -> {
+                    move(signPos.getX(), signPos.getY(), signPos.getZ());
+                });
+                return "Moving to nearest sign with coordinates: " + signPos;
+            }
+            return "No sign found nearby";
+        }
+
+        return "Could not access server world";
     }
 }
