@@ -32,9 +32,11 @@
 		"fabricloader": ">=0.16.10",
 		"minecraft": "~1.21.4",
 		"java": ">=21",
-		"fabric-api": "*"
+		"fabric-api": "*",
+		"mixinextras": ">=0.4.1"
 	},
 	"suggests": {
 		"another-mod": "*"
-	}
+	},
+	"accessWidener": "museumguide.accesswidener"
 }
