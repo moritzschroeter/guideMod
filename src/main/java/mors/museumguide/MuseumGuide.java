@@ -23,9 +23,11 @@ public class MuseumGuide implements ModInitializer {
 			// Client-only code here
 
 			LOGGER.info("Hello Fabric world!");
-			ModEntityTypes.registerModEntityTypes();
-			ModEntityTypes.registerAttributes();
+			//ModEntityTypes.registerModEntityTypes();
+			//ModEntityTypes.registerAttributes();
 		}
+		ModEntityTypes.registerModEntityTypes();
+		ModEntityTypes.registerAttributes();
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.

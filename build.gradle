@@ -1,8 +1,8 @@
+
 plugins {
 	id 'fabric-loom' version '1.10-SNAPSHOT'
 	id 'maven-publish'
-	id 'java'
-	id 'com.gradleup.shadow' version '9.0.0-beta10'
+	id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 version = project.mod_version
@@ -12,75 +12,64 @@ base {
 	archivesName = project.archives_base_name
 }
 
-// Have the include configuration extend modImplementation so that any dependencies added to modImplementation are available in include
-configurations {
-	include.extendsFrom(modImplementation)
-}
-
 repositories {
-	mavenCentral()
-}
-
-shadowJar {
-	zip64 = true
-	configurations = [project.configurations.shadow]
-	// Optionally, relocate packages if needed:
-	//relocate 'dev.langchain4j', "${project.archives_base_name}.shaded.dev.langchain4j"
-	exclude 'META-INF/accessWidener'
-}
-
-
-
-
-// Tell Loom’s remapJar task to use the ShadowJar output
-tasks.remapJar {
-	dependsOn tasks.shadowJar
-	inputFile = tasks.shadowJar.archiveFile.get().asFile
-	archiveFileName.set("${project.archives_base_name}-${project.version}.jar")
-}
-
-
-
-// Disable the standard jar task since we want only the shadow remapped jar
-tasks.jar {
-	enabled = false
-}
-
-fabricApi {
-	configureDataGeneration {
-		client = true
+	// Add repositories to retrieve artifacts from in here.
+	// You should only use this when depending on other mods because
+	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
+	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
+	// for more information about repositories.
+	maven {
+		url "https://repo.spongepowered.org/maven/"
+	}
+	maven {
+		url "https://maven.fabricmc.net/"
 	}
 }
 
+loom {
+	//accessWidenerPath = file("src/main/resources/museumguide.accesswidener")
+	mods {
+		"museumguide" {
+			sourceSet sourceSets.main
+		}
+	}
+	mixin {
+		// Optional: Enable if using Mixins
+		useLegacyMixinAp = false
+	}
+
+}
+
 dependencies {
-	// Standard Fabric dependencies…
+	// Standard Fabric dependencies
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	include(implementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:0.4.1")))
 
-	// Declare langchain4j dependencies for compilation…
-	implementation "dev.langchain4j:langchain4j-ollama:1.0.0-beta1"
-	implementation "dev.langchain4j:langchain4j:1.0.0-beta1"
-	implementation "dev.langchain4j:langchain4j-easy-rag:1.0.0-beta1"
-	implementation "dev.langchain4j:langchain4j-cohere:1.0.0-beta1"
-	implementation "org.apache.opennlp:opennlp-tools:1.9.4"
+	// MixinExtras
+	modImplementation "io.github.llamalad7:mixinextras-fabric:0.4.1"
+	compileOnly "io.github.llamalad7:mixinextras-fabric:0.4.1"
 
-	// And add them to the shadow configuration so they are bundled
-	shadow "dev.langchain4j:langchain4j-ollama:1.0.0-beta1"
-	shadow "dev.langchain4j:langchain4j:1.0.0-beta1"
-	shadow "dev.langchain4j:langchain4j-easy-rag:1.0.0-beta1"
-	shadow "dev.langchain4j:langchain4j-cohere:1.0.0-beta1"
-	shadow "org.apache.opennlp:opennlp-tools:1.9.4"
+	// Langchain4j dependencies with include
+	implementation include("dev.langchain4j:langchain4j-ollama:1.0.0-beta1")
+	implementation include("dev.langchain4j:langchain4j:1.0.0-beta1")
+	implementation include("dev.langchain4j:langchain4j-easy-rag:1.0.0-beta1")
+	implementation include("dev.langchain4j:langchain4j-cohere:1.0.0-beta1")
+	implementation include("org.apache.opennlp:opennlp-tools:1.9.4")
+	implementation include('dev.langchain4j:langchain4j-core:1.0.0-beta1')
+	implementation include('org.slf4j:slf4j-api:2.0.17')
+	implementation include ("dev.langchain4j:langchain4j-http-client:1.0.0-beta1")
+	implementation include('dev.langchain4j:langchain4j-http-client-jdk:1.0.0-beta1')
 }
-
-
-
+shadowJar	{
+	zip64 = true
+}
 processResources {
 	inputs.property "version", project.version
+
 	filesMatching("fabric.mod.json") {
-		expand "version": project.version
+		expand "version": inputs.properties.version
 	}
 }
 
@@ -89,18 +78,24 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 java {
+	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+	// if it is present.
+	// If you remove this line, sources will not be generated.
 	withSourcesJar()
+
 	sourceCompatibility = JavaVersion.VERSION_21
 	targetCompatibility = JavaVersion.VERSION_21
 }
 
 jar {
 	inputs.property "archivesName", project.base.archivesName
+
 	from("LICENSE") {
-		rename { "${it}_${project.base.archivesName}" }
+		rename { "${it}_${inputs.properties.archivesName}"}
 	}
 }
 
+// configure the maven publication
 publishing {
 	publications {
 		create("mavenJava", MavenPublication) {
@@ -108,11 +103,13 @@ publishing {
 			from components.java
 		}
 	}
-	repositories {
-		// Add your publishing repository configuration here
-	}
-}
 
-loom {
-	accessWidenerPath = file("src/main/resources/museumguide.accesswidener")
+	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+	repositories {
+		// Add repositories to publish to here.
+		// Notice: This block does NOT have the same function as the block in the top level.
+		// The repositories here will be used for publishing your artifact, not for
+		// retrieving dependencies.
+		mavenCentral()
+	}
 }

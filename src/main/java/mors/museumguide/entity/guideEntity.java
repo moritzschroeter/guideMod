@@ -13,10 +13,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-
-import java.util.Objects;
 
 public class guideEntity extends PathAwareEntity {
 
@@ -106,4 +103,6 @@ public class guideEntity extends PathAwareEntity {
     public void setMoving(guideEntity guide, boolean moving) {
         guide.startedMoving = moving;
     }
+
+
 }

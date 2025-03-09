@@ -2,10 +2,10 @@
 	"schemaVersion": 1,
 	"id": "museumguide",
 	"version": "${version}",
-	"name": "museumGuide",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "LLM Museum Guide",
+	"description": "LLM-based museum guide",
 	"authors": [
-		"Me!"
+		"Mors"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
@@ -26,7 +26,6 @@
 		]
 	},
 	"mixins": [
-		"museumguide.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.16.10",
@@ -37,6 +36,5 @@
 	},
 	"suggests": {
 		"another-mod": "*"
-	},
-	"accessWidener": "museumguide.accesswidener"
+	}
 }

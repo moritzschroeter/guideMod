@@ -6,6 +6,8 @@ import mors.museumguide.llm.chatHandler;
 import mors.museumguide.model.guideEntityModelLayers;
 import mors.museumguide.entity.renderer.guideEntityRenderer;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import mors.museumguide.llm.initLLM;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
