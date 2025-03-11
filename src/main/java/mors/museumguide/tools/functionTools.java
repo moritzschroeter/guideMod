@@ -3,7 +3,6 @@ package mors.museumguide.tools;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import mors.museumguide.entity.guideEntity;
-import mors.museumguide.logic.followPlayer;
 import mors.museumguide.logic.guideInteractionTracker;
 import mors.museumguide.logic.moveToCoord;
 import net.minecraft.block.Block;
@@ -11,15 +10,21 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.SignBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
-import net.minecraft.entity.Entity;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
+import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
 
-import java.util.List;
+
+import java.io.File;
+import java.io.FileReader;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static mors.museumguide.logic.guideInteractionTracker.getLastInteractedGuide;
 
@@ -155,6 +160,7 @@ public class functionTools {
             @P("Y coordinate of the origin") int y,
             @P("Z coordinate of the origin") int z,
             @P("Search radius in blocks") int radius) {
+        System.out.println("getNearestSignText called");
 
         World world = getPlayerWorld();
         if (world == null) return "No world available";
@@ -163,12 +169,14 @@ public class functionTools {
         BlockPos nearestSign = findNearestSignPos(world, origin, radius);
 
         if (nearestSign == null) {
-            return "";
+            return "No sign found";
         }
 
         BlockEntity blockEntity = world.getBlockEntity(nearestSign);
         if (blockEntity instanceof SignBlockEntity) {
-            return extractSimpleText((SignBlockEntity) blockEntity);
+            String signText = extractSimpleText((SignBlockEntity) blockEntity);
+            System.out.println(signText);
+            return signText;
         }
 
         return "";
@@ -319,4 +327,30 @@ public class functionTools {
 
         return "Could not access server world";
     }
-}
+    @Tool("Get the text of the nearest sign to the player")
+    public String signTextWrapper() {
+        System.out.println("signTextWrapper() was called");
+        if (lastInteractedPlayer == null) {
+            return "No interacted player available";
+        }
+        BlockPos playerpos = lastInteractedPlayer.getBlockPos();
+        World world = lastInteractedPlayer.getWorld();
+        if (world instanceof ServerWorld serverWorld) {
+            // Use a CompletableFuture to wait for the server thread execution
+            CompletableFuture<String> future = new CompletableFuture<>();
+            serverWorld.getServer().execute(() -> {
+                String result = getNearestSignText(playerpos.getX(), playerpos.getY(), playerpos.getZ(), 10);
+                future.complete(result != null ? result : "No sign text found");
+            });
+
+            try {
+                // Wait for the result with a timeout
+                return future.get(5, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                return "Error getting sign text: " + e.getMessage();
+            }
+        }
+        return "Could not access server world";
+    }
+
+    }

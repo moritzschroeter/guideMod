@@ -32,7 +32,7 @@ public class ToolsCommand {
                                             int radius = IntegerArgumentType.getInteger(context, "radius");
 
                                             functionTools tools = new functionTools();
-                                            tools.setLastInteraction(player);
+                                            functionTools.setLastInteraction(player);
 
                                             String result = tools.findNearestSignToPlayer();
                                             source.sendFeedback(() -> Text.literal(result), false);
@@ -48,7 +48,7 @@ public class ToolsCommand {
                                             int radius = IntegerArgumentType.getInteger(context, "radius");
 
                                             functionTools tools = new functionTools();
-                                            tools.setLastInteraction(player);
+                                            functionTools.setLastInteraction(player);
 
                                             int x = player.getBlockPos().getX();
                                             int y = player.getBlockPos().getY();
