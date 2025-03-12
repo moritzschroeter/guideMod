@@ -1,21 +1,20 @@
 package mors.museumguide.llm;
 
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.service.AiServices;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-import dev.langchain4j.service.SystemMessage;
-import mors.museumguide.logic.nearestObject;
+import mors.museumguide.jsonData.guideTools;
+import mors.museumguide.jsonData.paintingTools;
+import mors.museumguide.jsonData.signTools;
 import mors.museumguide.tools.functionTools;
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
 
-import static java.time.Duration.ofSeconds;
+import java.util.concurrent.CompletableFuture;
 
 public class initLLM {
 
     private static final String BASE_URL = "http://localhost:11434";
-    private static String MODEL_NAME = "llama3.1:latest";
+    private static String MODEL_NAME = "llama3.2:3b";
     private Assistant assistant;
     private static String[] modelNames;
 
@@ -98,7 +97,7 @@ public class initLLM {
             assistant = AiServices.builder(Assistant.class)
                     .chatLanguageModel(model)
                     .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
-                    .tools(new functionTools())
+                    .tools(new functionTools(), new signTools(), new paintingTools(), new guideTools())
                     .build();
 
             System.out.println("LLM re-initialization complete");

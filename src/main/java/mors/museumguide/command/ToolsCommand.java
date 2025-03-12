@@ -4,6 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import mors.museumguide.entity.guideEntity;
+import mors.museumguide.jsonData.guideTools;
+import mors.museumguide.jsonData.signTools;
 import mors.museumguide.llm.initLLM;
 import mors.museumguide.llm.ollamaHandler;
 import mors.museumguide.logic.guideInteractionTracker;
@@ -15,6 +17,8 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
 import java.io.IOException;
+
+import static mors.museumguide.jsonData.guideTools.move;
 
 public class ToolsCommand {
 
@@ -32,9 +36,10 @@ public class ToolsCommand {
                                             int radius = IntegerArgumentType.getInteger(context, "radius");
 
                                             functionTools tools = new functionTools();
+                                            signTools sign = new signTools();
                                             functionTools.setLastInteraction(player);
 
-                                            String result = tools.findNearestSignToPlayer();
+                                            String result = sign.findNearestSignToPlayer();
                                             source.sendFeedback(() -> Text.literal(result), false);
                                             return 1;
                                         })
@@ -54,7 +59,7 @@ public class ToolsCommand {
                                             int y = player.getBlockPos().getY();
                                             int z = player.getBlockPos().getZ();
 
-                                            String result = tools.getNearestSignText(x, y, z, radius);
+                                            String result = signTools.getNearestSignText(x, y, z, radius);
                                             source.sendFeedback(() -> Text.literal("Sign text: " + result), false);
                                             return 1;
                                         })
@@ -70,7 +75,7 @@ public class ToolsCommand {
                                             functionTools tools = new functionTools();
                                             tools.setLastInteraction(player);
 
-                                            String result = tools.findNearestSignToPlayer();
+                                            String result = signTools.findNearestSignToPlayer();
                                             source.sendFeedback(() -> Text.literal(result), false);
                                             return 1;
                                         })
@@ -126,7 +131,7 @@ public class ToolsCommand {
                                                             // Find nearby guide entity or spawn one if none exists
                                                             guideEntity guide = guideInteractionTracker.getLastInteractedGuide(player);
                                                             if (guide != null) {
-                                                                tools.move(x, y , z);
+                                                                move(x, y , z);
                                                                 source.sendFeedback(() -> Text.literal("The guide is now moving to" + x + ", " + y + ", " + z), false);
                                                             } else {
                                                                 source.sendFeedback(() -> Text.literal("Failed to find or spawn a guide entity."), false);
@@ -142,13 +147,14 @@ public class ToolsCommand {
                                 .executes(context -> {
                                     ServerCommandSource source = context.getSource();
                                     ServerPlayerEntity player = source.getPlayerOrThrow();
+                                    guideTools gTools = new guideTools();
 
                                     functionTools tools = new functionTools();
                                     tools.setLastInteraction(player);
 
                                     guideEntity guide = guideInteractionTracker.getLastInteractedGuide(player);
                                     if (guide != null) {
-                                        tools.moveToNearestSign();
+                                        guideTools.moveToNearestSign();
                                         source.sendFeedback(() -> Text.literal("Moving guide to nearest sign"), false);
                                     }
                                     return 0;
