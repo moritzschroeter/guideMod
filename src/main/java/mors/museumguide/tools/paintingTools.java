@@ -1,4 +1,4 @@
-package mors.museumguide.jsonData;
+package mors.museumguide.tools;
 
 import com.google.gson.Gson;
 import dev.langchain4j.agent.tool.P;

@@ -1,4 +1,4 @@
-package mors.museumguide.jsonData;
+package mors.museumguide.tools;
 
 import java.util.List;
 

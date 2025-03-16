@@ -4,12 +4,12 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import mors.museumguide.entity.guideEntity;
-import mors.museumguide.jsonData.guideTools;
-import mors.museumguide.jsonData.signTools;
 import mors.museumguide.llm.initLLM;
 import mors.museumguide.llm.ollamaHandler;
 import mors.museumguide.logic.guideInteractionTracker;
 import mors.museumguide.tools.functionTools;
+import mors.museumguide.tools.guideTools;
+import mors.museumguide.tools.signTools;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -18,7 +18,7 @@ import net.minecraft.text.Text;
 
 import java.io.IOException;
 
-import static mors.museumguide.jsonData.guideTools.move;
+import static mors.museumguide.tools.guideTools.move;
 
 public class ToolsCommand {
 
@@ -63,6 +63,28 @@ public class ToolsCommand {
                                             source.sendFeedback(() -> Text.literal("Sign text: " + result), false);
                                             return 1;
                                         })
+                                )
+                        )
+                        .then(CommandManager.literal("getSignTextPos")
+                                .then(CommandManager.argument("x", IntegerArgumentType.integer())
+                                        .then(CommandManager.argument("y", IntegerArgumentType.integer())
+                                                .then(CommandManager.argument("z", IntegerArgumentType.integer())
+                                                        .executes(context -> {
+                                                            ServerCommandSource source = context.getSource();
+                                                            ServerPlayerEntity player = source.getPlayerOrThrow();
+                                                            int x = IntegerArgumentType.getInteger(context, "x");
+                                                            int y = IntegerArgumentType.getInteger(context, "y");
+                                                            int z = IntegerArgumentType.getInteger(context, "z");
+
+                                                            signTools sign = new signTools();
+                                                            sign.setLastInteraction(player);
+
+                                                            String signText = signTools.getTextPos(x, y, z);
+                                                            source.sendFeedback(() -> Text.literal(signText), false);
+                                                            return 1;
+                                                        })
+                                                )
+                                        )
                                 )
                         )
                         .then(CommandManager.literal("nearestSignPlayer")

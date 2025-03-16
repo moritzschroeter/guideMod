@@ -1,6 +1,5 @@
-package mors.museumguide.jsonData;
+package mors.museumguide.tools;
 
-import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import mors.museumguide.logic.guideInteractionTracker;
 import net.minecraft.block.Block;
@@ -32,7 +31,6 @@ public class signTools {
         return null;
     }
 
-
     @Tool("Find the nearest sign to the player")
     public static String findNearestSignToPlayer() {
         System.out.println("Find the nearest sign to the player");
@@ -45,7 +43,6 @@ public class signTools {
         return findNearestSign(playerPos);
     }
 
-    //@Tool("Get the position of the nearest sign block entity to specified coordinates")
     public static String findNearestSign(BlockPos pos) {
         World world = getPlayerWorld();
         if (world == null) {
@@ -62,23 +59,19 @@ public class signTools {
         int signsFound = 0;
         int radius = 50;
 
-        // Loop over all block positions within a cube of side 2*radius+1 around origin
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
                 for (int dz = -radius; dz <= radius; dz++) {
                     BlockPos currentPos = origin.add(dx, dy, dz);
                     blocksChecked++;
 
-                    // Only check loaded chunks
                     if (!world.isChunkLoaded(currentPos)) {
-
                         continue;
                     }
 
                     BlockState blockState = world.getBlockState(currentPos);
                     Block block = blockState.getBlock();
 
-                    // Check if the block is a sign
                     boolean isSign = block instanceof SignBlock || blockState.isIn(BlockTags.SIGNS);
 
                     if (isSign) {
@@ -88,7 +81,6 @@ public class signTools {
                             closestDistanceSq = distSq;
                             nearestSign = currentPos;
 
-                            // Get sign text if possible
                             BlockEntity blockEntity = world.getBlockEntity(currentPos);
                             if (blockEntity instanceof SignBlockEntity) {
                                 SignBlockEntity signEntity = (SignBlockEntity) blockEntity;
@@ -122,16 +114,15 @@ public class signTools {
         }
     }
 
-    /**
-     * Extracts text from a sign as a simple, LLM-friendly string
-     **/
     private static String extractSimpleText(SignBlockEntity sign) {
+        System.out.println("extractSimpleText() called");
         if (sign == null) return "";
 
         StringBuilder text = new StringBuilder();
         for (int i = 0; i < 4; i++) {
             Text lineText = sign.getFrontText().getMessage(i, false);
             String line = lineText.getString().trim();
+            System.out.println("Line " + i + ": " + line);
             if (!line.isEmpty()) {
                 if (text.length() > 0) text.append(" | ");
                 text.append(line);
@@ -140,15 +131,7 @@ public class signTools {
         return text.toString();
     }
 
-    /**
-     * Gets the raw text content from a sign for LLM processing
-     */
-    //@Tool("Get the text content from the nearest sign to specified coordinates")
-    public static String getNearestSignText(
-            @P("X coordinate of the origin") int x,
-            @P("Y coordinate of the origin") int y,
-            @P("Z coordinate of the origin") int z,
-            @P("Search radius in blocks") int radius) {
+    public static String getNearestSignText(int x, int y, int z, int radius) {
         System.out.println("getNearestSignText called");
 
         World world = getPlayerWorld();
@@ -171,9 +154,6 @@ public class signTools {
         return "";
     }
 
-    /**
-     * Helper method to find the nearest sign position
-     */
     static BlockPos findNearestSignPos(World world, BlockPos origin, int radius) {
         BlockPos nearestSign = null;
         double closestDistanceSq = Double.MAX_VALUE;
@@ -182,6 +162,10 @@ public class signTools {
             for (int dy = -radius; dy <= radius; dy++) {
                 for (int dz = -radius; dz <= radius; dz++) {
                     BlockPos currentPos = origin.add(dx, dy, dz);
+
+                    if (!world.isChunkLoaded(currentPos)) {
+                        continue;
+                    }
 
                     BlockState blockState = world.getBlockState(currentPos);
                     Block block = blockState.getBlock();
@@ -201,29 +185,45 @@ public class signTools {
 
         return nearestSign;
     }
+
     @Tool("Get the text of the nearest sign to the player")
-    public String signTextWrapper() {
-        System.out.println("signTextWrapper() was called");
+    public static String signWrapper()  {
+        System.out.println("signWrapper() was called");
+        lastInteractedPlayer = guideInteractionTracker.getPlayer();
         if (lastInteractedPlayer == null) {
+            System.out.println("No interacted player available");
             return "No interacted player available";
         }
         BlockPos playerpos = lastInteractedPlayer.getBlockPos();
         World world = lastInteractedPlayer.getWorld();
         if (world instanceof ServerWorld serverWorld) {
-            // Use a CompletableFuture to wait for the server thread execution
+            BlockPos signPos = findNearestSignPos(serverWorld, playerpos, 50);
             CompletableFuture<String> future = new CompletableFuture<>();
             serverWorld.getServer().execute(() -> {
-                String result = getNearestSignText(playerpos.getX(), playerpos.getY(), playerpos.getZ(), 10);
-                future.complete(result != null ? result : "No sign text found");
+                String signText = getTextPos(signPos.getX(), signPos.getY(), signPos.getZ());
+                future.complete(signText);
             });
-
             try {
-                // Wait for the result with a timeout
-                return future.get(5, TimeUnit.SECONDS);
+                return future.get(15, TimeUnit.SECONDS);
             } catch (Exception e) {
                 return "Error getting sign text: " + e.getMessage();
             }
         }
         return "Could not access server world";
+    }
+
+    public static String getTextPos(int x, int y, int z) {
+        lastInteractedPlayer = guideInteractionTracker.getPlayer();
+        System.out.println("getTextPos() called");
+        BlockPos signPos = new BlockPos(x, y, z);
+        if (lastInteractedPlayer == null) {
+            System.out.println("No interacted player available");
+            return "No interacted player available";
+        }
+        World world = lastInteractedPlayer.getWorld();
+        if (world instanceof ServerWorld serverWorld) {
+            return extractSimpleText((SignBlockEntity) serverWorld.getBlockEntity(signPos));
+        }
+        return "No sign at position";
     }
 }

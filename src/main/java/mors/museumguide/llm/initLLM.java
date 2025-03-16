@@ -4,17 +4,17 @@ import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.service.AiServices;
-import mors.museumguide.jsonData.guideTools;
-import mors.museumguide.jsonData.paintingTools;
-import mors.museumguide.jsonData.signTools;
 import mors.museumguide.tools.functionTools;
+import mors.museumguide.tools.guideTools;
+import mors.museumguide.tools.paintingTools;
+import mors.museumguide.tools.signTools;
 
 import java.util.concurrent.CompletableFuture;
 
 public class initLLM {
 
     private static final String BASE_URL = "http://localhost:11434";
-    private static String MODEL_NAME = "llama3.2:3b";
+    private static String MODEL_NAME = "qwen2.5-coder:14b";
     private Assistant assistant;
     private static String[] modelNames;
 
@@ -86,6 +86,7 @@ public class initLLM {
         return MODEL_NAME;
     }
     // java
+// In initLLM.java, modify the reinitialize() method
     public void reinitialize() {
         try {
             System.out.println("Re-initializing LLM service...");
@@ -97,7 +98,8 @@ public class initLLM {
             assistant = AiServices.builder(Assistant.class)
                     .chatLanguageModel(model)
                     .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
-                    .tools(new functionTools(), new signTools(), new paintingTools(), new guideTools())
+                    .tools(new functionTools(), new signTools(), new paintingTools(),
+                            new guideTools())
                     .build();
 
             System.out.println("LLM re-initialization complete");
