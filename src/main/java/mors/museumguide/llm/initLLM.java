@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 public class initLLM {
 
     private static final String BASE_URL = "http://localhost:11434";
-    private static String MODEL_NAME = "qwen2.5-coder:14b";
+    private static String MODEL_NAME = "llama3.2:3b";
     private Assistant assistant;
     private static String[] modelNames;
 
