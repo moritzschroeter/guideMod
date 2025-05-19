@@ -4,10 +4,8 @@ import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.service.AiServices;
-import mors.museumguide.tools.functionTools;
-import mors.museumguide.tools.guideTools;
-import mors.museumguide.tools.paintingTools;
-import mors.museumguide.tools.signTools;
+import dev.langchain4j.service.SystemMessage;
+import mors.museumguide.tools.*;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -23,7 +21,7 @@ public class initLLM {
     }
 
     public interface Assistant {
-        //@SystemMessage("Du bist eine Museumsführer in einem Museum. Deine Antworten sollten kurz aber Informationsreich sein. Beschränke deine Antworten auf 2 bis 3 Sätze. Antworte nicht in Stichpunkten.")
+        @SystemMessage("You are a helpful, friendly museum guide. Always explain things in a simple and clear way so that anyone can understand — even someone visiting a museum for the first time. Speak like a real person, not like a robot or a textbook. If someone asks something complicated, break it down into easy steps or give an example. Only give answers that are true and based on real information. If you don't know something, it's okay to say you’re not sure. Never make up facts or stories — that is not allowed.Your goal is to make the museum visit enjoyable, informative, and welcoming for everyone. Limit your answers to 3-4 short sentences.")
         String chat(String userMessage);
     }
 
@@ -41,7 +39,7 @@ public class initLLM {
                     .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
                     .tools(new functionTools())
                     .build();
-
+            reinitialize();
             System.out.println("LLM initialization complete");
         } catch (Exception e) {
             System.err.println("Error initializing LLM: " + e.getMessage());
@@ -99,7 +97,7 @@ public class initLLM {
                     .chatLanguageModel(model)
                     .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
                     .tools(new functionTools(), new signTools(), new paintingTools(),
-                            new guideTools())
+                            new guideTools(), new ClevelandArtApiTools())
                     .build();
 
             System.out.println("LLM re-initialization complete");

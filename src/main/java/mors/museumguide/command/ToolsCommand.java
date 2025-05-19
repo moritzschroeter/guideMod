@@ -7,6 +7,7 @@ import mors.museumguide.entity.guideEntity;
 import mors.museumguide.llm.initLLM;
 import mors.museumguide.llm.ollamaHandler;
 import mors.museumguide.logic.guideInteractionTracker;
+import mors.museumguide.tools.ClevelandArtApiTools;
 import mors.museumguide.tools.functionTools;
 import mors.museumguide.tools.guideTools;
 import mors.museumguide.tools.signTools;
@@ -181,7 +182,29 @@ public class ToolsCommand {
                                     }
                                     return 0;
                                 }))
+                        .then(CommandManager.literal("searchArtwork")
+                                .then(CommandManager.argument("query", StringArgumentType.greedyString())
+                                        .executes(context -> {
+                                            ServerCommandSource source = context.getSource();
+                                            ServerPlayerEntity player = source.getPlayerOrThrow();
+                                            String query = StringArgumentType.getString(context, "query");
 
+                                            functionTools.setLastInteraction(player);
+
+                                            ClevelandArtApiTools apiTools = new ClevelandArtApiTools();
+                                            ClevelandArtApiTools.ArtworkInfo artworkInfo = apiTools.searchArtworksCompact(query);
+
+                                            if (artworkInfo != null) {
+                                                source.sendFeedback(() -> Text.literal("Ergebnis der Kunstwerksuche:"), false);
+                                                source.sendFeedback(() -> Text.literal(artworkInfo.toString()), false);
+                                            } else {
+                                                source.sendFeedback(() -> Text.literal("Keine Kunstwerke für \"" + query + "\" gefunden."), false);
+                                            }
+
+                                            return 1;
+                                        })
+                                )
+                        )
         );
         dispatcher.register(
                 CommandManager.literal("llm")
@@ -266,3 +289,4 @@ public class ToolsCommand {
         );
     }
 }
+

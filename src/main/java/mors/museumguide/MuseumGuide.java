@@ -3,9 +3,7 @@ package mors.museumguide;
 import mors.museumguide.entity.ModEntityTypes;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
-
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +19,6 @@ public class MuseumGuide implements ModInitializer {
 	public void onInitialize() {
 		if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
 			// Client-only code here
-
 			LOGGER.info("Hello Fabric world!");
 			//ModEntityTypes.registerModEntityTypes();
 			//ModEntityTypes.registerAttributes();
