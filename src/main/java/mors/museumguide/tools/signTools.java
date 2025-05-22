@@ -13,6 +13,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -226,4 +227,63 @@ public class signTools {
         }
         return "No sign at position";
     }
+
+    /**
+     * Caches all signs in the surrounding chunks of the player.
+     * Each entry in signCache maps a BlockPos to its sign text.
+     * @param player The player around whom to scan for signs
+     */
+    public static void cacheSignsAroundPlayer(ServerPlayerEntity player) {
+        System.out.println("Caching signs around player");
+        if (player == null) {
+            System.out.println("No player available");
+            return;
+        }
+
+        // Update lastInteractedPlayer for other sign functions
+        lastInteractedPlayer = player;
+
+        World world = player.getWorld();
+        if (!(world instanceof ServerWorld serverWorld)) {
+            System.out.println("World is not a ServerWorld");
+            return;
+        }
+
+        BlockPos playerPos = player.getBlockPos();
+        int playerChunkX = playerPos.getX() >> 4;
+        int playerChunkZ = playerPos.getZ() >> 4;
+        int chunkRadius = 5; // Increased from 2 to 5 for better coverage
+
+        int signsFound = 0;
+        System.out.println("Player position: " + playerPos + ", in chunk: " + playerChunkX + "," + playerChunkZ);
+
+        for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
+            for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
+                int chunkX = playerChunkX + dx;
+                int chunkZ = playerChunkZ + dz;
+
+                // Check if chunk is loaded before processing
+                if (!serverWorld.isChunkLoaded(chunkX, chunkZ)) {
+                    continue;
+                }
+
+                WorldChunk chunk = serverWorld.getChunkManager().getWorldChunk(chunkX, chunkZ);
+                if (chunk != null) {
+                    for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
+                        if (blockEntity instanceof SignBlockEntity signEntity) {
+                            BlockPos signPos = signEntity.getPos();
+                            String signText = extractSimpleText(signEntity);
+                            if (!signText.isEmpty()) {
+                                signCache.addSign(signPos, signText);
+                                signsFound++;
+                                System.out.println("Cached sign at " + signPos + " with text: " + signText);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        System.out.println("Sign caching complete. Found and cached " + signsFound + " signs. Total in cache: " + signCache.getSize());
+    }
 }
+

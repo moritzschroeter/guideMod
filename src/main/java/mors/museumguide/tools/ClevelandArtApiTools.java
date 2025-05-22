@@ -101,6 +101,32 @@ public class ClevelandArtApiTools {
         }
     }
 
+    @Tool("Get information about the artist of the nearest painting")
+    public List<SimpleArtworkInfo> getNearestSignAuthorInfo() {
+        // Hole den Text des nächsten Schilds
+        String signText = signTools.signWrapper();
+        if (signText == null || signText.isEmpty()) {
+            System.out.println("Kein Schildtext gefunden.");
+            return null;
+        }
+        // Suche nach "by:" und extrahiere den Autor
+        String lower = signText.toLowerCase();
+        int idx = lower.indexOf("by:");
+        if (idx == -1) {
+            System.out.println("Kein 'by:' im Schildtext gefunden.");
+            return null;
+        }
+        String afterBy = signText.substring(idx + 3).trim();
+        // Falls noch weitere Infos nach dem Namen stehen, nur den Namen nehmen (bis zum nächsten Trennzeichen)
+        String author = afterBy.split("[|\\n\\r]")[0].trim();
+        if (author.isEmpty()) {
+            System.out.println("Kein Autor nach 'by:' gefunden.");
+            return null;
+        }
+        // Suche nach Künstlerinfos
+        return searchArtistInfo(author);
+    }
+
     public static class ArtworkInfo {
         public String title;
         public String artist;

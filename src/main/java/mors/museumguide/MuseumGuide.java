@@ -1,8 +1,10 @@
 package mors.museumguide;
 
 import mors.museumguide.entity.ModEntityTypes;
+import mors.museumguide.tools.signTools;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,14 +22,14 @@ public class MuseumGuide implements ModInitializer {
 		if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
 			// Client-only code here
 			LOGGER.info("Hello Fabric world!");
-			//ModEntityTypes.registerModEntityTypes();
-			//ModEntityTypes.registerAttributes();
 		}
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+			signTools.cacheSignsAroundPlayer(handler.getPlayer());
+		});
 		ModEntityTypes.registerModEntityTypes();
 		ModEntityTypes.registerAttributes();
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
-
 	}
 }

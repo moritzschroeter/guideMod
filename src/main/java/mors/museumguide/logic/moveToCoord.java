@@ -1,7 +1,6 @@
 package mors.museumguide.logic;
 
 import mors.museumguide.entity.guideEntity;
-import net.minecraft.entity.ai.pathing.Path;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -17,7 +16,7 @@ public class moveToCoord {
             System.out.println("No guide to move");
             return "No guide to move";
         }
-        guide.setMoving(guide, true);
+        guide.setMoving(true);
 
         BlockPos guidePos = guide.getBlockPos();
         System.out.println("Guide position: " + guidePos);
@@ -29,7 +28,7 @@ public class moveToCoord {
         // Check if guide has navigation capability
         if (guide.getNavigation() == null) {
             System.out.println("Navigation controller is null");
-            guide.setMoving(guide, false);
+            guide.setMoving(false);
             return "Guide navigation system not available";
         }
         // Use the entity's built-in navigation with a higher priority
@@ -41,3 +40,4 @@ public class moveToCoord {
     }
 
 }
+

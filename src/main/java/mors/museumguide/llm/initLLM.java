@@ -37,7 +37,8 @@ public class initLLM {
             assistant = AiServices.builder(Assistant.class)
                     .chatLanguageModel(model)
                     .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
-                    .tools(new functionTools())
+                    .tools(new functionTools(), new signTools(), new paintingTools(),
+                            new guideTools(), new ClevelandArtApiTools())
                     .build();
             reinitialize();
             System.out.println("LLM initialization complete");

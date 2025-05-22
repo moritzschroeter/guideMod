@@ -15,21 +15,26 @@ import static mors.museumguide.logic.guideInteractionTracker.getLastInteractedGu
 public class guideTools {
 
     signTools sign = new signTools();
-    private static ServerPlayerEntity lastInteractedPlayer = guideInteractionTracker.getPlayer();
+
+    // Methode zum dynamischen Abrufen des letzten interagierenden Spielers
+    private static ServerPlayerEntity getLastInteractedPlayer() {
+        return guideInteractionTracker.getPlayer();
+    }
 
     public static void setLastInteraction(ServerPlayerEntity player) {
-        lastInteractedPlayer = player;
+        guideInteractionTracker.trackInteraction(player, getLastInteractedGuide(player));
     }
 
     @Tool("Follow the player")
     public String followWrapper() {
         System.out.println("followWrapper() was called");
 
-        if (lastInteractedPlayer == null) {
+        ServerPlayerEntity player = getLastInteractedPlayer();
+        if (player == null) {
             System.out.println("No interacted player available");
             return "No player available to follow";
         }
-        makeLastInteractedGuideFollow(lastInteractedPlayer);
+        makeLastInteractedGuideFollow(player);
         return "Following the player!";
     }
 
@@ -62,11 +67,12 @@ public class guideTools {
     public String stopFollowingWrapper()  {
         System.out.println("stopFollowingWrapper() was called");
 
-        if (lastInteractedPlayer == null) {
+        ServerPlayerEntity player = getLastInteractedPlayer();
+        if (player == null) {
             System.out.println("No interacted player available");
             return "No player available to stop following";
         }
-        stopFollowing(lastInteractedPlayer);
+        stopFollowing(player);
         return "Stopped following the player!";
     }
 
@@ -89,15 +95,16 @@ public class guideTools {
             @P("x Coordinate") int x,
             @P("y Coordinate") int y,
             @P("z Coordinate") int z) {
-        if (lastInteractedPlayer == null) {
+        ServerPlayerEntity player = getLastInteractedPlayer();
+        if (player == null) {
             return "No player available";
         }
 
-        World world = lastInteractedPlayer.getWorld();
+        World world = player.getWorld();
         if (world instanceof ServerWorld serverWorld) {
             // Schedule the movement logic to run on the server thread
             serverWorld.getServer().execute(() -> {
-                guideEntity guide = getLastInteractedGuide(lastInteractedPlayer);
+                guideEntity guide = getLastInteractedGuide(player);
                 if (guide != null) {
                     moveToCoord move = new moveToCoord(guide, world);
                     move.moveTo(new BlockPos(x, y, z), guide);
@@ -111,13 +118,14 @@ public class guideTools {
     @Tool("Move to the nearest sign")
     public static String moveToNearestSign() {
         System.out.println("moveToNearestSign() was called");
-        if (lastInteractedPlayer == null) {
+        ServerPlayerEntity player = getLastInteractedPlayer();
+        if (player == null) {
             return "No interacted player available";
         }
 
-        World world = lastInteractedPlayer.getWorld();
+        World world = player.getWorld();
         if (world instanceof ServerWorld serverWorld) {
-            BlockPos signPos = signTools.findNearestSignPos(world, lastInteractedPlayer.getBlockPos(), 50);
+            BlockPos signPos = signTools.findNearestSignPos(world, player.getBlockPos(), 50);
             if (signPos != null) {
                 serverWorld.getServer().execute(() -> {
                     move(signPos.getX(), signPos.getY(), signPos.getZ());

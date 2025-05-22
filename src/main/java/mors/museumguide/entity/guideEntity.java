@@ -100,9 +100,11 @@ public class guideEntity extends PathAwareEntity {
         return this.startedMoving;
     }
 
-    public void setMoving(guideEntity guide, boolean moving) {
-        guide.startedMoving = moving;
+    public void setMoving(boolean moving) {
+        this.startedMoving = moving;
     }
 
 
 }
+
+
