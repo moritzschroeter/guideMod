@@ -137,4 +137,23 @@ public class guideTools {
 
         return "Could not access server world";
     }
+
+    @Tool("Move to the player")
+    public static String moveToPlayer() {
+        System.out.println("moveToPlayer() was called");
+        ServerPlayerEntity player = getLastInteractedPlayer();
+
+        if (player == null) {
+            return "No interacted player available";
+        }
+        World world = player.getWorld();
+        if (world instanceof ServerWorld serverWorld) {
+            BlockPos playerPos = player.getBlockPos();
+            serverWorld.getServer().execute(() -> {
+                move(playerPos.getX(), playerPos.getY(), playerPos.getZ());
+            });
+            return "Moving to player";
+        }
+        return "Could not access server world";
+    }
 }

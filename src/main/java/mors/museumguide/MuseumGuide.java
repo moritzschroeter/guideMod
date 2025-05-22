@@ -19,6 +19,10 @@ public class MuseumGuide implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		// Load and log Wikidata API configuration
+		LOGGER.info("Wikidata API URL: {}", Config.WIKIDATA_API_URL);
+		LOGGER.info("Wikidata Max Results: {}", Config.WIKIDATA_MAX_RESULTS);
+		LOGGER.info("Wikidata User Agent: {}", Config.WIKIDATA_USER_AGENT);
 		if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
 			// Client-only code here
 			LOGGER.info("Hello Fabric world!");
@@ -33,3 +37,4 @@ public class MuseumGuide implements ModInitializer {
 		// Proceed with mild caution.
 	}
 }
+
