@@ -60,7 +60,8 @@ dependencies {
 	implementation include('org.slf4j:slf4j-api:2.0.17')
 	implementation include ("dev.langchain4j:langchain4j-http-client:1.0.0-beta1")
 	implementation include('dev.langchain4j:langchain4j-http-client-jdk:1.0.0-beta1')
-	implementation ('com.squareup.okhttp3:okhttp:4.9.3')
+	implementation include ('com.squareup.okhttp3:okhttp:4.9.3')
+	implementation include ("com.squareup.okio:okio:3.12.0")
 }
 shadowJar	{
 	zip64 = true
