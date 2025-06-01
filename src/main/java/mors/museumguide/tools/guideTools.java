@@ -150,9 +150,13 @@ public class guideTools {
         if (world instanceof ServerWorld serverWorld) {
             BlockPos playerPos = player.getBlockPos();
             serverWorld.getServer().execute(() -> {
-                move(playerPos.getX(), playerPos.getY(), playerPos.getZ());
+                guideEntity guide = getLastInteractedGuide(player);
+                if (guide != null) {
+                    moveToCoord move = new moveToCoord(guide, world);
+                    move.moveTo(playerPos, guide);
+                }
             });
-            return "Moving to player";
+            return "Moving to player at " + playerPos.getX() + ", " + playerPos.getY() + ", " + playerPos.getZ();
         }
         return "Could not access server world";
     }
