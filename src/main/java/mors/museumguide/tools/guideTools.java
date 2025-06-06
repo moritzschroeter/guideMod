@@ -138,7 +138,7 @@ public class guideTools {
         return "Could not access server world";
     }
 
-    @Tool("Move to the player")
+    @Tool("Move to my or players position")
     public static String moveToPlayer() {
         System.out.println("moveToPlayer() was called");
         ServerPlayerEntity player = getLastInteractedPlayer();

@@ -192,7 +192,7 @@ public class ToolsCommand {
                                             functionTools.setLastInteraction(player);
 
                                             ClevelandArtApiTools apiTools = new ClevelandArtApiTools();
-                                            ClevelandArtApiTools.ArtworkInfo artworkInfo = apiTools.searchArtworksCompact(query);
+                                            ClevelandArtApiTools.ArtworkInfo artworkInfo = apiTools.getArtwork(query);
 
                                             if (artworkInfo != null) {
                                                 source.sendFeedback(() -> Text.literal("Ergebnis der Kunstwerksuche:"), false);

@@ -2,7 +2,6 @@ package mors.museumguide.tools;
 
 import com.google.gson.Gson;
 import dev.langchain4j.agent.tool.P;
-import dev.langchain4j.agent.tool.Tool;
 import mors.museumguide.logic.guideInteractionTracker;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -57,7 +56,7 @@ public class paintingTools {
 
         return paintings;
     }
-    @Tool("Get the description of the painting with the provided id")
+    //@Tool("Get the description of the painting with the provided id")
     public static String getPaintingDescription(@P("ID of the painting") String paintingID) {
         System.out.println("getPaintingDescription() called for ID: " + paintingID);
 

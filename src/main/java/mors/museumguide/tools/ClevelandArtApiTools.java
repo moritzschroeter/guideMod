@@ -1,24 +1,27 @@
 package mors.museumguide.tools;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import dev.langchain4j.agent.tool.Tool;
 import okhttp3.HttpUrl;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ClevelandArtApiTools {
 
-    private final String baseURL = "https://openaccess-api.clevelandart.org/api/artworks";
+    private final String baseURL = "https://openaccess-api.clevelandart.org/api/";
 
     @Tool("Get information about a painting ")
-    public ArtworkInfo searchArtworksCompact(String paintingName) {
-        System.out.println(" with painting " + paintingName);
+    public ArtworkInfo getArtwork(String paintingName) {
+        System.out.println(" calling with painting " + paintingName);
         try {
-            HttpUrl url = HttpUrl.parse(baseURL).newBuilder()
+            HttpUrl url = HttpUrl.parse(baseURL + "artworks/").newBuilder()
                     .addQueryParameter("q", paintingName)
                     .build();
 
@@ -57,13 +60,15 @@ public class ClevelandArtApiTools {
         }
     }
 
-    @Tool("Get information about an artist and other paintings they have done. ")
-    public List<SimpleArtworkInfo> searchArtistInfo(String artistName) {
+
+
+
+    @Tool("Get information about an artist.")
+    public ArtistItem searchArtistInfo(String artistName) {
         System.out.println("Calling searchArtistInfo() with artistName: " + artistName);
         try {
-            HttpUrl url = HttpUrl.parse(baseURL).newBuilder()
-                    .addQueryParameter("q", "")
-                    .addQueryParameter("artists", artistName)
+            HttpUrl url = HttpUrl.parse(baseURL + "creators/").newBuilder()
+                    .addQueryParameter("name", artistName)
                     .build();
 
             HttpURLConnection con = (HttpURLConnection) url.url().openConnection();
@@ -79,30 +84,71 @@ public class ClevelandArtApiTools {
                     }
 
                     Gson gson = new Gson();
-                    ClevelandArtResponse artResponse = gson.fromJson(response.toString(), ClevelandArtResponse.class);
-                    List<SimpleArtworkInfo> result = new ArrayList<>();
-                    if (artResponse != null && artResponse.data != null && !artResponse.data.isEmpty()) {
-                        for (ArtworkItem artwork : artResponse.data) {
-                            String artist = (artwork.creators != null && !artwork.creators.isEmpty())
-                                    ? artwork.creators.get(0).description
-                                    : "Unbekannt";
-                            String description = artwork.description != null ? artwork.description : "Keine Beschreibung verfügbar";
-                            result.add(new SimpleArtworkInfo(artwork.title, description, artist));
+                    com.google.gson.JsonObject jsonObject = gson.fromJson(response.toString(), com.google.gson.JsonObject.class);
+                    if (jsonObject.has("data")) {
+                        Type listType = new TypeToken<List<ArtistItem>>() {}.getType();
+                        List<ArtistItem> artists = gson.fromJson(jsonObject.get("data"), listType);
+
+                        if (artists != null && !artists.isEmpty()) {
+                            ArtistItem artistItem = artists.get(0);
+                            System.out.println(String.format("Name: %s, Description: %s, Nationality: %s, Birth Year: %s, Death Year: %s",
+                                    artistItem.name, artistItem.description, artistItem.biography,  artistItem.nationality, artistItem.birth_year, artistItem.death_year));
+                            return artistItem;
                         }
                     }
-                    return result;
                 }
-            } else {
-                return null;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    @Tool("Get all paintings by an artist")
+    //@P("artistName", "Name of the artist")
+    public ArrayList<ArtworkItem> searchArtworks(String artistName) {
+        System.out.println("Calling searchArtworks() with artistName " + artistName);
+        ArrayList<ArtworkItem> result = new ArrayList<>();
+
+        try {
+            // Request artist data including artworks
+            HttpUrl url = HttpUrl.parse(baseURL + "creators/").newBuilder()
+                    .addQueryParameter("name", artistName)
+                    .build();
+
+            HttpURLConnection con = (HttpURLConnection) url.url().openConnection();
+            con.setRequestMethod("GET");
+
+            int responseCode = con.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = in.readLine()) != null) {
+                        response.append(line);
+                    }
+
+                    Gson gson = new Gson();
+                    ClevelandArtistResponse artistResponse = gson.fromJson(response.toString(), ClevelandArtistResponse.class);
+
+                    if (artistResponse != null && artistResponse.data != null && !artistResponse.data.isEmpty()) {
+                        ArtistItem artist = artistResponse.data.get(0);
+                        if (artist.artworks != null) {
+                            result.addAll(artist.artworks);
+                        }
+                    }
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
         }
+
+        return result;
     }
 
+
+
     @Tool("Get information about the artist of the nearest painting")
-    public List<SimpleArtworkInfo> getNearestSignAuthorInfo() {
+    public ArtistItem getNearestSignAuthorInfo() {
         // Hole den Text des nächsten Schilds
         String signText = signTools.signWrapper();
         if (signText == null || signText.isEmpty()) {
@@ -126,6 +172,7 @@ public class ClevelandArtApiTools {
         // Suche nach Künstlerinfos
         return searchArtistInfo(author);
     }
+
 
     public static class ArtworkInfo {
         public String title;
@@ -163,53 +210,43 @@ public class ClevelandArtApiTools {
         }
     }
 
-    public static void main(String[] args) {
-        ClevelandArtApiTools tools = new ClevelandArtApiTools();
-        ArtworkInfo info = tools.searchArtworksCompact("View of Schroon Mountain, Essex County, New York, After a Storm");
-        if (info != null) {
-            System.out.println(info);
-        } else {
-            System.out.println("Keine Daten gefunden.");
-        }
-
-        // Beispiel für die Künstlersuche (nur kompakte Infos)
-        List<SimpleArtworkInfo> artworks = tools.searchArtistInfo("Thomas Cole");
-        if (artworks != null && !artworks.isEmpty()) {
-            for (SimpleArtworkInfo infoItem : artworks) {
-                System.out.println(infoItem);
-                System.out.println("---");
-            }
-        } else {
-            System.out.println("Keine Werke gefunden.");
-        }
+    // Hilfsklassen für die JSON-Deserialisierung
+    class ClevelandArtResponse {
+        List<ArtworkItem> data;
     }
-}
 
-// Hilfsklassen für die JSON-Deserialisierung
-class ClevelandArtResponse {
-    List<ArtworkItem> data;
-}
+    class ArtworkItem {
+        String title;
+        String description;
+        String technique;
+        List<Creator> creators;
+    }
+    public class ArtworkResponse {
+        public int id;
+        public String accession_number;
+        public String title;
+        public String tombstone;
+        public String url;
+    }
 
-class ArtworkItem {
-    String title;
-    String description;
-    String technique;
-    List<Creator> creators;
-}
 
-class Creator {
-    String name;
-    String description; // Hinzugefügt für Künstlerbeschreibung
-}
+    class Creator {
+        String name;
+        String description; // Hinzugefügt für Künstlerbeschreibung
+    }
 
-// Hilfsklassen für die Künstler-Deserialisierung
-class ClevelandArtistResponse {
-    List<ArtistItem> data;
-}
+    // Hilfsklassen für die Künstler-Deserialisierung
+    class ClevelandArtistResponse {
+        List<ArtistItem> data;
+    }
 
-class ArtistItem {
-    String name;
-    String description;
-    String birth;
-    String death;
+    public static class ArtistItem {
+        String name;
+        String description;
+        String biography;
+        String nationality;
+        String birth_year;
+        String death_year;
+        List<ArtworkItem> artworks; // Hinzugefügt
+    }
 }
