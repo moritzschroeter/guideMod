@@ -125,7 +125,7 @@ public class guideTools {
 
         World world = player.getWorld();
         if (world instanceof ServerWorld serverWorld) {
-            BlockPos signPos = signTools.findNearestSignPos(world, player.getBlockPos(), 50);
+            BlockPos signPos = signTools.findNearestSignToPosition(player.getBlockPos());
             if (signPos != null) {
                 serverWorld.getServer().execute(() -> {
                     move(signPos.getX(), signPos.getY(), signPos.getZ());
@@ -138,7 +138,7 @@ public class guideTools {
         return "Could not access server world";
     }
 
-    @Tool("Move to my or players position")
+    @Tool("Move to my position/players position")
     public static String moveToPlayer() {
         System.out.println("moveToPlayer() was called");
         ServerPlayerEntity player = getLastInteractedPlayer();

@@ -19,7 +19,7 @@ public class ClevelandArtApiTools {
 
     @Tool("Get information about a painting ")
     public ArtworkInfo getArtwork(String paintingName) {
-        System.out.println(" calling with painting " + paintingName);
+        System.out.println(" calling getArtwork() with painting " + paintingName);
         try {
             HttpUrl url = HttpUrl.parse(baseURL + "artworks/").newBuilder()
                     .addQueryParameter("q", paintingName)

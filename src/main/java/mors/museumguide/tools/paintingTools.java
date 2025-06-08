@@ -7,7 +7,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.WorldSavePath;
 
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -30,7 +29,7 @@ public class paintingTools {
 
         return "custompaintings/baMod - paintings/custompaintings.json";
     }
-    public static paintingData getCustompaintings() throws FileNotFoundException {
+    public static paintingData getCustompaintings() {
         String filePath = getWorldCustomPaintingsPath();
         System.out.println("Loading custom paintings from: " + filePath);
 

@@ -18,6 +18,8 @@ import net.minecraft.world.chunk.WorldChunk;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import static mors.museumguide.tools.signCache.cachedSigns;
+
 public class signTools {
     private static ServerPlayerEntity lastInteractedPlayer = guideInteractionTracker.getPlayer();
 
@@ -41,7 +43,38 @@ public class signTools {
         }
 
         BlockPos playerPos = lastInteractedPlayer.getBlockPos();
-        return findNearestSign(playerPos);
+        if (signCache.getSize() > 0) {
+            System.out.println("Using sign cache with " + signCache.getSize() + " entries");
+            BlockPos nearestSignPos = findNearestSignToPosition(playerPos);
+            if (nearestSignPos != null) {
+                String signText = cachedSigns.get(nearestSignPos);
+                return String.format("Found sign at %d,%d,%d with text: %s",
+                        nearestSignPos.getX(), nearestSignPos.getY(), nearestSignPos.getZ(), signText);
+            }
+            return "No sign found in cache";
+        } else {
+            System.out.println("Sign cache is empty, using direct search");
+            return findNearestSign(playerPos);
+        }
+    }
+
+
+    public static BlockPos findNearestSignToPosition(BlockPos pos) {
+        BlockPos res = BlockPos.ORIGIN; // Standardwert
+        if (cachedSigns.isEmpty()) {
+            return res;
+        }
+
+        double closestDistanceSq = Double.MAX_VALUE;
+
+        for (BlockPos signPos : cachedSigns.keySet()) {
+            double distSq = signPos.getSquaredDistance(pos);
+            if (distSq < closestDistanceSq) {
+                closestDistanceSq = distSq;
+                res = signPos;
+            }
+        }
+        return res;
     }
 
     public static String findNearestSign(BlockPos pos) {
@@ -187,7 +220,7 @@ public class signTools {
         return nearestSign;
     }
 
-    @Tool("Get the text of the nearest sign to the player")
+    //@Tool("Get the text of the nearest sign to the player")
     public static String signWrapper()  {
         System.out.println("signWrapper() was called");
         lastInteractedPlayer = guideInteractionTracker.getPlayer();

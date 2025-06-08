@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class signCache  {
     
-    private static final Map<BlockPos, String> cachedSigns = new ConcurrentHashMap<>();
+    protected static final Map<BlockPos, String> cachedSigns = new ConcurrentHashMap<>();
     public static void addSign(BlockPos pos, String text)   {
         cachedSigns.put(pos, text);
     }
