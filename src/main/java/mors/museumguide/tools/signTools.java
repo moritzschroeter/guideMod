@@ -77,6 +77,54 @@ public class signTools {
         return res;
     }
 
+    @Tool("Find a sign containing specific text")
+    public static String findSignWithText(String searchText) {
+        if (lastInteractedPlayer == null) {
+            return "No player available";
+        }
+
+        BlockPos playerPos = lastInteractedPlayer.getBlockPos();
+
+        if (cachedSigns.isEmpty()) {
+            return "No signs in cache";
+        }
+
+        double closestDistanceSq = Double.MAX_VALUE;
+        boolean foundMatch = false;
+        BlockPos res = BlockPos.ORIGIN;
+
+        for (BlockPos signPos : cachedSigns.keySet()) {
+            String signText = cachedSigns.get(signPos);
+
+            // Überprüfe, ob der Text im Schildtext enthalten ist
+            if (searchText != null && !searchText.isEmpty()) {
+                if (signText != null && signText.toLowerCase().contains(searchText.toLowerCase())) {
+                    double distSq = signPos.getSquaredDistance(playerPos);
+                    if (distSq < closestDistanceSq) {
+                        closestDistanceSq = distSq;
+                        res = signPos;
+                        foundMatch = true;
+                    }
+                }
+            } else {
+                // Falls kein Suchtext angegeben wurde, nehme das nächste Schild
+                double distSq = signPos.getSquaredDistance(playerPos);
+                if (distSq < closestDistanceSq) {
+                    closestDistanceSq = distSq;
+                    res = signPos;
+                    foundMatch = true;
+                }
+            }
+        }
+
+        if (foundMatch) {
+            String signText = cachedSigns.get(res);
+            return String.format("Found sign at %d,%d,%d with text: %s",
+                    res.getX(), res.getY(), res.getZ(), signText);
+        } else {
+            return "No sign found containing text: " + searchText;
+        }
+    }
     public static String findNearestSign(BlockPos pos) {
         World world = getPlayerWorld();
         if (world == null) {
