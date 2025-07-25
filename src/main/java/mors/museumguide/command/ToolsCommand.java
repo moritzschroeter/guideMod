@@ -7,6 +7,7 @@ import mors.museumguide.entity.guideEntity;
 import mors.museumguide.llm.initLLM;
 import mors.museumguide.llm.ollamaHandler;
 import mors.museumguide.logic.guideInteractionTracker;
+import mors.museumguide.prompts.promptsTypology;
 import mors.museumguide.tools.ClevelandArtApiTools;
 import mors.museumguide.tools.functionTools;
 import mors.museumguide.tools.guideTools;
@@ -104,19 +105,6 @@ public class ToolsCommand {
                                         })
                                 )
                         )
-                        .then(CommandManager.literal("testFunction")
-                                .then(CommandManager.argument("message", StringArgumentType.greedyString())
-                                        .executes(context -> {
-                                            ServerCommandSource source = context.getSource();
-                                            String message = StringArgumentType.getString(context, "message");
-
-                                            functionTools tools = new functionTools();
-                                            String result = tools.testFunctionCalling(message);
-                                            source.sendFeedback(() -> Text.literal(result), false);
-                                            return 1;
-                                        })
-                                )
-                        )
                         .then(CommandManager.literal("follow")
                                 .executes(context -> {
                                     ServerCommandSource source = context.getSource();
@@ -205,6 +193,42 @@ public class ToolsCommand {
                                         })
                                 )
                         )
+                        .then(CommandManager.literal("setPromptLevel")
+                                .then(CommandManager.argument("level", IntegerArgumentType.integer(1, 3))
+                                        .executes(context -> {
+                                            ServerCommandSource source = context.getSource();
+                                            ServerPlayerEntity player = source.getPlayerOrThrow();
+                                            int level = IntegerArgumentType.getInteger(context, "level");
+
+                                            // Alten Prompt für Vergleich speichern
+                                            String oldPrompt = promptsTypology.getCurrentPrompt().substring(0, Math.min(20, promptsTypology.getCurrentPrompt().length())) + "...";
+
+                                            // Prompt-Level setzen
+                                            promptsTypology.setPromptLevel(level);
+                                            System.out.println("Prompt set level to " + level);
+
+                                            // LLM neu initialisieren
+                                            ollamaHandler handler = new ollamaHandler();
+                                            handler.resetModel();
+
+                                            // Neuen Prompt zur Verifikation ausgeben
+                                            String newPrompt = promptsTypology.getCurrentPrompt().substring(0, Math.min(20, promptsTypology.getCurrentPrompt().length())) + "...";
+                                            System.out.println("Alter Prompt: " + oldPrompt);
+                                            System.out.println("Neuer Prompt: " + newPrompt);
+
+                                            source.sendFeedback(() -> Text.literal("Prompt-Level auf " + level + " gesetzt und LLM neu initialisiert"), false);
+                                            source.sendFeedback(() -> Text.literal("Alt: " + oldPrompt + " → Neu: " + newPrompt), false);
+                                            return 1;
+                                        })
+                                )
+                        )
+                        .then(CommandManager.literal("printPrompt")
+                                .executes(context -> {
+                                    ServerCommandSource source = context.getSource();
+                                    ServerPlayerEntity player = source.getPlayerOrThrow();
+                                    source.sendFeedback(() -> Text.literal("Printing prompt: " + promptsTypology.getCurrentPrompt()), false);
+                                    return 0;
+                                }))
         );
         dispatcher.register(
                 CommandManager.literal("llm")

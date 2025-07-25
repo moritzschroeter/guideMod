@@ -47,19 +47,19 @@ public class ClevelandArtApiTools {
                         String description = artwork.description != null ? artwork.description : "Keine Beschreibung verfügbar";
                         String technique = artwork.technique != null ? artwork.technique : "Unbekannt";
                         String tombstone = artwork.tombstone != null ? artwork.tombstone : "Keine Details verfügbar";
-                        String creation_date = artwork.creation_date != null ? artwork.creation_date : "Unbekannt";
-
-                        return new ArtworkInfo(artwork.title, artist, description, technique, creation_date, description);
+                        String creationDate = artwork.creation_date != null ? artwork.creation_date : "Unbekannt";
+                        return new ArtworkInfo(artwork.title, artist, tombstone, technique, creationDate, description);
                     } else {
-                        return new ArtworkInfo(null, "", "", "", null, "Keine Beschreibung verfügbar");
+                        return new ArtworkInfo(paintingName, "Unbekannt", "Keine Details verfügbar", "Unbekannt", "Unbekannt", "Keine Beschreibung verfügbar");
                     }
                 }
             } else {
-                return null;
+                System.out.println("HTTP-Anfrage fehlgeschlagen, Statuscode: " + responseCode);
+                return new ArtworkInfo(paintingName, "Unbekannt", "Konnte nicht geladen werden", "Unbekannt", "Unbekannt", "Keine Beschreibung verfügbar");
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return new ArtworkInfo(paintingName, "Unbekannt", "Fehler bei der Anfrage", "Unbekannt", "Unbekannt", "Keine Beschreibung verfügbar");
         }
     }
 
@@ -94,7 +94,6 @@ public class ClevelandArtApiTools {
 
                         if (artists != null && !artists.isEmpty()) {
                             ArtistItem artistItem = artists.get(0);
-                            artistItem.artworks = null;
                             System.out.println(String.format("Name: %s, Description: %s, Nationality: %s, Birth Year: %s, Death Year: %s",
                                     artistItem.name, artistItem.description, artistItem.biography,  artistItem.nationality, artistItem.birth_year, artistItem.death_year));
                             return artistItem;
@@ -108,6 +107,7 @@ public class ClevelandArtApiTools {
         return null;
     }
     @Tool("Get all paintings by an artist")
+    //@P("artistName", "Name of the artist")
     public ArrayList<ArtworkItem> searchArtworks(String artistName) {
         System.out.println("Calling searchArtworks() with artistName " + artistName);
         ArrayList<ArtworkItem> result = new ArrayList<>();
@@ -226,9 +226,9 @@ public class ClevelandArtApiTools {
         String title;
         String description;
         String technique;
-        List<Creator> creators;
         String tombstone;
         String creation_date;
+        List<Creator> creators;
     }
     public class ArtworkResponse {
         public int id;

@@ -4,7 +4,7 @@ import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.SystemMessage;
+import mors.museumguide.prompts.promptsTypology;
 import mors.museumguide.tools.*;
 
 import java.util.concurrent.CompletableFuture;
@@ -21,17 +21,6 @@ public class initLLM {
     }
 
     public interface Assistant {
-        @SystemMessage("""
-You are a helpful, friendly museum guide. Your main goal is to make museum visits enjoyable and informative for everyone, especially first-timers.
-
-**Your responses must be based *solely* on the information retrieved from your tools. Do not use outside knowledge or invent details.**
-
-Explain things simply and clearly, like a real person, not a textbook or a robot. If someone asks something complicated, break it down into easy steps or give an example.
-
-**If the information is not available from your tools, or if you genuinely don't know, honestly state that you cannot find the details. Never make up facts, stories, or descriptions that are not provided by the tools.**
-
-Keep your answers concise and easy to digest, typically within 3-4 short sentences.
-""")        
         String chat(String userMessage);
     }
 
@@ -46,7 +35,8 @@ Keep your answers concise and easy to digest, typically within 3-4 short sentenc
             System.out.println("Building AI assistant...");
             assistant = AiServices.builder(Assistant.class)
                     .chatLanguageModel(model)
-                    .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
+                    .chatMemory(MessageWindowChatMemory.withMaxMessages(30))
+                    .systemMessageProvider(MemoryID -> promptsTypology.getCurrentPrompt())
                     .tools(new functionTools(), new signTools(), new paintingTools(),
                             new guideTools(), new ClevelandArtApiTools())
                     .build();
@@ -106,12 +96,14 @@ Keep your answers concise and easy to digest, typically within 3-4 short sentenc
 
             assistant = AiServices.builder(Assistant.class)
                     .chatLanguageModel(model)
-                    .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
+                    .chatMemory(MessageWindowChatMemory.withMaxMessages(30))
+                    .systemMessageProvider(MemoryID -> promptsTypology.getCurrentPrompt())
                     .tools(new functionTools(), new signTools(), new paintingTools(),
                             new guideTools(), new ClevelandArtApiTools())
                     .build();
 
             System.out.println("LLM re-initialization complete");
+            System.out.println("Current prompt: " + promptsTypology.getCurrentPrompt());
         } catch (Exception e) {
             System.err.println("Error re-initializing LLM: " + e.getMessage());
             e.printStackTrace();

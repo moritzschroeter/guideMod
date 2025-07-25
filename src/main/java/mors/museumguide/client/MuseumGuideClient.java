@@ -2,14 +2,12 @@ package mors.museumguide.client;
 
 import mors.museumguide.command.ToolsCommand;
 import mors.museumguide.entity.ModEntityTypes;
-import mors.museumguide.llm.chatHandler;
-import mors.museumguide.model.guideEntityModelLayers;
 import mors.museumguide.entity.renderer.guideEntityRenderer;
-import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import mors.museumguide.llm.chatHandler;
 import mors.museumguide.llm.initLLM;
+import mors.museumguide.model.guideEntityModelLayers;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 
 public class MuseumGuideClient implements ClientModInitializer {
@@ -19,6 +17,7 @@ public class MuseumGuideClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         // This code runs on the client side when Minecraft is loaded.
+
         guideEntityModelLayers.registerModelLayers();
         EntityRendererRegistry.register(ModEntityTypes.GUIDE, guideEntityRenderer::new);
 
