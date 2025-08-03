@@ -10,6 +10,8 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+import java.util.Map;
+
 import static mors.museumguide.logic.guideInteractionTracker.getLastInteractedGuide;
 
 public class guideTools {
@@ -159,5 +161,50 @@ public class guideTools {
             return "Moving to player at " + playerPos.getX() + ", " + playerPos.getY() + ", " + playerPos.getZ();
         }
         return "Could not access server world";
+    }
+    @Tool("Move to a specific painting by name")
+    public static String moveToPainting(@P("Name of the painting") String paintingName) {
+        System.out.println("moveToPainting() was called with painting name: " + paintingName);
+        ServerPlayerEntity player = getLastInteractedPlayer();
+        if (player == null) {
+            return "No interacted player available";
+        }
+
+        World world = player.getWorld();
+        if (!(world instanceof ServerWorld serverWorld)) {
+            return "Could not access server world";
+        }
+
+        // Search for the painting directly in the sign texts
+        String lowerPaintingName = paintingName.toLowerCase();
+        BlockPos paintingSignPos = null;
+        String foundSignText = null;
+
+        for (Map.Entry<BlockPos, String> entry : signCache.getSigns().entrySet()) {
+            String signText = entry.getValue().toLowerCase();
+            if (signText.contains(lowerPaintingName)) {
+                paintingSignPos = entry.getKey();
+                foundSignText = entry.getValue();
+                break;
+            }
+        }
+
+        if (paintingSignPos == null) {
+            return "Could not find a sign for painting: " + paintingName;
+        }
+
+        // Move the guide to the sign
+        final BlockPos finalPaintingSignPos = paintingSignPos;
+        serverWorld.getServer().execute(() -> {
+            guideEntity guide = getLastInteractedGuide(player);
+            if (guide != null) {
+                moveToCoord move = new moveToCoord(guide, world);
+                move.moveTo(finalPaintingSignPos, guide);
+            }
+        });
+
+        return "Moving to painting: \"" + paintingName + "\" found at sign: \"" +
+               foundSignText + "\" at " + paintingSignPos.getX() + ", " +
+               paintingSignPos.getY() + ", " + paintingSignPos.getZ();
     }
 }
