@@ -1,80 +1,89 @@
 package mors.museumguide.tools;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import dev.langchain4j.agent.tool.Tool;
 import okhttp3.HttpUrl;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ClevelandArtApiTools {
 
-    private final String baseURL = "https://openaccess-api.clevelandart.org/api/";
+    private final String baseURL = "https://collectionapi.metmuseum.org/public/collection/v1/";
 
-    @Tool("Get information about a painting ")
+    @Tool("Get information about a painting")
     public ArtworkInfo getArtwork(String paintingName) {
-        System.out.println(" calling getArtwork() with painting " + paintingName);
+        System.out.println("Calling getArtwork() with painting " + paintingName);
         try {
-            HttpUrl url = HttpUrl.parse(baseURL + "artworks/").newBuilder()
+            // Step 1: search for the painting by keyword
+            HttpUrl searchUrl = HttpUrl.parse(baseURL + "search").newBuilder()
                     .addQueryParameter("q", paintingName)
                     .build();
 
-            HttpURLConnection con = (HttpURLConnection) url.url().openConnection();
-            con.setRequestMethod("GET");
+            HttpURLConnection searchCon = (HttpURLConnection) searchUrl.url().openConnection();
+            searchCon.setRequestMethod("GET");
 
-            int responseCode = con.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
-                    StringBuilder response = new StringBuilder();
+            int searchResponseCode = searchCon.getResponseCode();
+            if (searchResponseCode == HttpURLConnection.HTTP_OK) {
+                try (BufferedReader in = new BufferedReader(new InputStreamReader(searchCon.getInputStream()))) {
+                    StringBuilder searchResponse = new StringBuilder();
                     String line;
                     while ((line = in.readLine()) != null) {
-                        response.append(line);
+                        searchResponse.append(line);
                     }
-
                     Gson gson = new Gson();
-                    ClevelandArtResponse artResponse = gson.fromJson(response.toString(), ClevelandArtResponse.class);
-                    if (artResponse != null && artResponse.data != null && !artResponse.data.isEmpty()) {
-                        ArtworkItem artwork = artResponse.data.get(0);
-                        String artist = (artwork.creators != null && !artwork.creators.isEmpty())
-                                ? artwork.creators.get(0).name
-                                : "Unbekannt";
-                        String description = artwork.description != null ? artwork.description : "Keine Beschreibung verfügbar";
-                        String technique = artwork.technique != null ? artwork.technique : "Unbekannt";
-                        String tombstone = artwork.tombstone != null ? artwork.tombstone : "Keine Details verfügbar";
-                        String creationDate = artwork.creation_date != null ? artwork.creation_date : "Unbekannt";
-                        return new ArtworkInfo(artwork.title, artist, tombstone, technique, creationDate, description);
-                    } else {
-                        return new ArtworkInfo(paintingName, "Unbekannt", "Keine Details verfügbar", "Unbekannt", "Unbekannt", "Keine Beschreibung verfügbar");
+                    MetSearchResponse searchResult = gson.fromJson(searchResponse.toString(), MetSearchResponse.class);
+                    if (searchResult != null && searchResult.objectIDs != null && !searchResult.objectIDs.isEmpty()) {
+                        int objectId = searchResult.objectIDs.get(0);
+                        // Step 2: fetch details for the first result
+                        HttpUrl objectUrl = HttpUrl.parse(baseURL + "objects/" + objectId).newBuilder().build();
+                        HttpURLConnection objectCon = (HttpURLConnection) objectUrl.url().openConnection();
+                        objectCon.setRequestMethod("GET");
+                        int objectResponseCode = objectCon.getResponseCode();
+                        if (objectResponseCode == HttpURLConnection.HTTP_OK) {
+                            try (BufferedReader objIn = new BufferedReader(new InputStreamReader(objectCon.getInputStream()))) {
+                                StringBuilder objResponse = new StringBuilder();
+                                String objLine;
+                                while ((objLine = objIn.readLine()) != null) {
+                                    objResponse.append(objLine);
+                                }
+                                MetObjectResponse objectDetails = gson.fromJson(objResponse.toString(), MetObjectResponse.class);
+                                if (objectDetails != null) {
+                                    String artist = objectDetails.artistDisplayName != null && !objectDetails.artistDisplayName.isEmpty()
+                                            ? objectDetails.artistDisplayName : "Unbekannt";
+                                    String description = objectDetails.creditLine != null ? objectDetails.creditLine : "Keine Beschreibung verfügbar";
+                                    String technique = objectDetails.medium != null ? objectDetails.medium : "Unbekannt";
+                                    String tombstone = objectDetails.department != null ? objectDetails.department : "Keine Details verfügbar";
+                                    String creationDate = objectDetails.objectDate != null ? objectDetails.objectDate : "Unbekannt";
+                                    return new ArtworkInfo(objectDetails.title, artist, tombstone, technique, creationDate, description);
+                                }
+                            }
+                        }
                     }
                 }
-            } else {
-                System.out.println("HTTP-Anfrage fehlgeschlagen, Statuscode: " + responseCode);
-                return new ArtworkInfo(paintingName, "Unbekannt", "Konnte nicht geladen werden", "Unbekannt", "Unbekannt", "Keine Beschreibung verfügbar");
             }
         } catch (Exception e) {
             e.printStackTrace();
             return new ArtworkInfo(paintingName, "Unbekannt", "Fehler bei der Anfrage", "Unbekannt", "Unbekannt", "Keine Beschreibung verfügbar");
         }
+        return new ArtworkInfo(paintingName, "Unbekannt", "Keine Details verfügbar", "Unbekannt", "Unbekannt", "Keine Beschreibung verfügbar");
     }
-
-
-
 
     @Tool("Get information about an artist.")
     public ArtistItem searchArtistInfo(String artistName) {
         System.out.println("Calling searchArtistInfo() with artistName: " + artistName);
         try {
-            HttpUrl url = HttpUrl.parse(baseURL + "creators/").newBuilder()
-                    .addQueryParameter("name", artistName)
+            // The Met API does not provide direct artist search.
+            // We search for the artist name and take the first object to extract artist info.
+            HttpUrl searchUrl = HttpUrl.parse(baseURL + "search").newBuilder()
+                    .addQueryParameter("q", artistName)
                     .build();
 
-            HttpURLConnection con = (HttpURLConnection) url.url().openConnection();
+            HttpURLConnection con = (HttpURLConnection) searchUrl.url().openConnection();
             con.setRequestMethod("GET");
 
             int responseCode = con.getResponseCode();
@@ -85,18 +94,31 @@ public class ClevelandArtApiTools {
                     while ((line = in.readLine()) != null) {
                         response.append(line);
                     }
-
                     Gson gson = new Gson();
-                    com.google.gson.JsonObject jsonObject = gson.fromJson(response.toString(), com.google.gson.JsonObject.class);
-                    if (jsonObject.has("data")) {
-                        Type listType = new TypeToken<List<ArtistItem>>() {}.getType();
-                        List<ArtistItem> artists = gson.fromJson(jsonObject.get("data"), listType);
-
-                        if (artists != null && !artists.isEmpty()) {
-                            ArtistItem artistItem = artists.get(0);
-                            System.out.println(String.format("Name: %s, Description: %s, Nationality: %s, Birth Year: %s, Death Year: %s",
-                                    artistItem.name, artistItem.description, artistItem.biography,  artistItem.nationality, artistItem.birth_year, artistItem.death_year));
-                            return artistItem;
+                    MetSearchResponse searchResponse = gson.fromJson(response.toString(), MetSearchResponse.class);
+                    if (searchResponse != null && searchResponse.objectIDs != null && !searchResponse.objectIDs.isEmpty()) {
+                        int objectId = searchResponse.objectIDs.get(0);
+                        HttpUrl objectUrl = HttpUrl.parse(baseURL + "objects/" + objectId).newBuilder().build();
+                        HttpURLConnection objCon = (HttpURLConnection) objectUrl.url().openConnection();
+                        objCon.setRequestMethod("GET");
+                        if (objCon.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                            try (BufferedReader objIn = new BufferedReader(new InputStreamReader(objCon.getInputStream()))) {
+                                StringBuilder objResponse = new StringBuilder();
+                                String objLine;
+                                while ((objLine = objIn.readLine()) != null) {
+                                    objResponse.append(objLine);
+                                }
+                                MetObjectResponse objectDetails = gson.fromJson(objResponse.toString(), MetObjectResponse.class);
+                                if (objectDetails != null) {
+                                    ArtistItem artistItem = new ArtistItem();
+                                    artistItem.name = objectDetails.artistDisplayName;
+                                    artistItem.nationality = objectDetails.artistNationality;
+                                    artistItem.birth_year = objectDetails.artistBeginDate;
+                                    artistItem.death_year = objectDetails.artistEndDate;
+                                    artistItem.description = objectDetails.creditLine;
+                                    return artistItem;
+                                }
+                            }
                         }
                     }
                 }
@@ -106,19 +128,18 @@ public class ClevelandArtApiTools {
         }
         return null;
     }
+
     @Tool("Get all paintings by an artist")
-    //@P("artistName", "Name of the artist")
-    public ArrayList<ArtworkItem> searchArtworks(String artistName) {
+    public ArrayList<ArtworkInfo> searchArtworks(String artistName) {
         System.out.println("Calling searchArtworks() with artistName " + artistName);
-        ArrayList<ArtworkItem> result = new ArrayList<>();
+        ArrayList<ArtworkInfo> result = new ArrayList<>();
 
         try {
-            // Request artist data including artworks
-            HttpUrl url = HttpUrl.parse(baseURL + "creators/").newBuilder()
-                    .addQueryParameter("name", artistName)
+            HttpUrl searchUrl = HttpUrl.parse(baseURL + "search").newBuilder()
+                    .addQueryParameter("q", artistName)
                     .build();
 
-            HttpURLConnection con = (HttpURLConnection) url.url().openConnection();
+            HttpURLConnection con = (HttpURLConnection) searchUrl.url().openConnection();
             con.setRequestMethod("GET");
 
             int responseCode = con.getResponseCode();
@@ -129,14 +150,34 @@ public class ClevelandArtApiTools {
                     while ((line = in.readLine()) != null) {
                         response.append(line);
                     }
-
                     Gson gson = new Gson();
-                    ClevelandArtistResponse artistResponse = gson.fromJson(response.toString(), ClevelandArtistResponse.class);
-
-                    if (artistResponse != null && artistResponse.data != null && !artistResponse.data.isEmpty()) {
-                        ArtistItem artist = artistResponse.data.get(0);
-                        if (artist.artworks != null) {
-                            result.addAll(artist.artworks);
+                    MetSearchResponse searchResponse = gson.fromJson(response.toString(), MetSearchResponse.class);
+                    if (searchResponse != null && searchResponse.objectIDs != null) {
+                        int count = 0;
+                        for (Integer objectId : searchResponse.objectIDs) {
+                            HttpUrl objectUrl = HttpUrl.parse(baseURL + "objects/" + objectId).newBuilder().build();
+                            HttpURLConnection objCon = (HttpURLConnection) objectUrl.url().openConnection();
+                            objCon.setRequestMethod("GET");
+                            if (objCon.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                                try (BufferedReader objIn = new BufferedReader(new InputStreamReader(objCon.getInputStream()))) {
+                                    StringBuilder objResponse = new StringBuilder();
+                                    String objLine;
+                                    while ((objLine = objIn.readLine()) != null) {
+                                        objResponse.append(objLine);
+                                    }
+                                    MetObjectResponse objectDetails = gson.fromJson(objResponse.toString(), MetObjectResponse.class);
+                                    if (objectDetails != null && objectDetails.title != null) {
+                                        String artist = objectDetails.artistDisplayName != null ? objectDetails.artistDisplayName : "Unbekannt";
+                                        String description = objectDetails.creditLine != null ? objectDetails.creditLine : "Keine Beschreibung verfügbar";
+                                        String technique = objectDetails.medium != null ? objectDetails.medium : "Unbekannt";
+                                        String tombstone = objectDetails.department != null ? objectDetails.department : "Keine Details verfügbar";
+                                        String creationDate = objectDetails.objectDate != null ? objectDetails.objectDate : "Unbekannt";
+                                        result.add(new ArtworkInfo(objectDetails.title, artist, tombstone, technique, creationDate, description));
+                                        count++;
+                                        if (count >= 10) break; // limit results for performance
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -147,35 +188,6 @@ public class ClevelandArtApiTools {
 
         return result;
     }
-
-
-
-    @Tool("Get information about the artist of the nearest painting")
-    public ArtistItem getNearestSignAuthorInfo() {
-        // Hole den Text des nächsten Schilds
-        String signText = signTools.signWrapper();
-        if (signText == null || signText.isEmpty()) {
-            System.out.println("Kein Schildtext gefunden.");
-            return null;
-        }
-        // Suche nach "by:" und extrahiere den Autor
-        String lower = signText.toLowerCase();
-        int idx = lower.indexOf("by:");
-        if (idx == -1) {
-            System.out.println("Kein 'by:' im Schildtext gefunden.");
-            return null;
-        }
-        String afterBy = signText.substring(idx + 3).trim();
-        // Falls noch weitere Infos nach dem Namen stehen, nur den Namen nehmen (bis zum nächsten Trennzeichen)
-        String author = afterBy.split("[|\\n\\r]")[0].trim();
-        if (author.isEmpty()) {
-            System.out.println("Kein Autor nach 'by:' gefunden.");
-            return null;
-        }
-        // Suche nach Künstlerinfos
-        return searchArtistInfo(author);
-    }
-
 
     public static class ArtworkInfo {
         public String title;
@@ -200,62 +212,29 @@ public class ClevelandArtApiTools {
         }
     }
 
-    public static class SimpleArtworkInfo {
-        public String title;
-        public String description;
-        public String artist;
-
-        public SimpleArtworkInfo(String title, String description, String artist) {
-            this.title = title;
-            this.description = description;
-            this.artist = artist;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("Titel: %s\nBeschreibung: %s\nKünstler: %s", title, description, artist);
-        }
-    }
-
-    // Hilfsklassen für die JSON-Deserialisierung
-    class ClevelandArtResponse {
-        List<ArtworkItem> data;
-    }
-
-    class ArtworkItem {
-        String title;
-        String description;
-        String technique;
-        String tombstone;
-        String creation_date;
-        List<Creator> creators;
-    }
-    public class ArtworkResponse {
-        public int id;
-        public String accession_number;
-        public String title;
-        public String tombstone;
-        public String url;
-    }
-
-
-    class Creator {
-        String name;
-        String description; // Hinzugefügt für Künstlerbeschreibung
-    }
-
-    // Hilfsklassen für die Künstler-Deserialisierung
-    class ClevelandArtistResponse {
-        List<ArtistItem> data;
-    }
-
     public static class ArtistItem {
-        String name;
-        String description;
-        String biography;
-        String nationality;
-        String birth_year;
-        String death_year;
-        List<ArtworkItem> artworks; // Hinzugefügt
+        public String name;
+        public String description;
+        public String nationality;
+        public String birth_year;
+        public String death_year;
+    }
+
+    // Helper classes for Met API JSON responses
+    class MetSearchResponse {
+        List<Integer> objectIDs;
+    }
+
+    class MetObjectResponse {
+        int objectID;
+        String title;
+        String artistDisplayName;
+        String artistNationality;
+        String artistBeginDate;
+        String artistEndDate;
+        String objectDate;
+        String medium;
+        String department;
+        String creditLine;
     }
 }
