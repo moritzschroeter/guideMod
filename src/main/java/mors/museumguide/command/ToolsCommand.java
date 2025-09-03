@@ -8,7 +8,7 @@ import mors.museumguide.llm.initLLM;
 import mors.museumguide.llm.ollamaHandler;
 import mors.museumguide.logic.guideInteractionTracker;
 import mors.museumguide.prompts.promptsTypology;
-import mors.museumguide.tools.ClevelandArtApiTools;
+import mors.museumguide.tools.ApiTools;
 import mors.museumguide.tools.functionTools;
 import mors.museumguide.tools.guideTools;
 import mors.museumguide.tools.signTools;
@@ -179,8 +179,8 @@ public class ToolsCommand {
 
                                             functionTools.setLastInteraction(player);
 
-                                            ClevelandArtApiTools apiTools = new ClevelandArtApiTools();
-                                            ClevelandArtApiTools.ArtworkInfo artworkInfo = apiTools.getArtwork(query);
+                                            ApiTools apiTools = new ApiTools();
+                                            ApiTools.ArtworkInfo artworkInfo = apiTools.getArtwork(query);
 
                                             if (artworkInfo != null) {
                                                 source.sendFeedback(() -> Text.literal("Ergebnis der Kunstwerksuche:"), false);

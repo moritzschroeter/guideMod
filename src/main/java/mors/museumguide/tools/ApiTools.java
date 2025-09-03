@@ -11,7 +11,7 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ClevelandArtApiTools {
+public class ApiTools {
 
     private final String baseURL = "https://collectionapi.metmuseum.org/public/collection/v1/";
     @Tool("Get information about the artist of the nearest painting")
@@ -38,6 +38,64 @@ public class ClevelandArtApiTools {
         }
         // Suche nach Künstlerinfos
         return searchArtistInfo(author);
+    }
+    @Tool("Get information about the nearest painting to the player")
+    public ArtworkInfo getNearestPaintingInfo() {
+        System.out.println("Getting information about the nearest painting to player");
+
+        // Find the nearest sign using the sign cache
+        String signText = signTools.findNearestSignToPlayer();
+        if (signText == null || signText.isEmpty() || !signText.contains("text:")) {
+            System.out.println("No sign text found near player");
+            return new ArtworkInfo("Unknown", "Unknown", "No painting information available",
+                    "Unknown", "Unknown", "No nearby painting sign found");
+        }
+
+        // Extract actual text from the response format
+        String actualText = signText.substring(signText.indexOf("text:") + 5).trim();
+        if (actualText.isEmpty()) {
+            System.out.println("Sign has no text content");
+            return new ArtworkInfo("Unknown", "Unknown", "No painting information available",
+                    "Unknown", "Unknown", "Nearby sign has no readable text");
+        }
+
+        System.out.println("Found sign with text: " + actualText);
+
+        // Try to extract painting title - handle multi-line titles
+        String paintingTitle = actualText;
+        if (actualText.toLowerCase().contains("by:")) {
+            // Find the position of "by:" and take everything before it as the title
+            int byIndex = actualText.toLowerCase().indexOf("by:");
+            paintingTitle = actualText.substring(0, byIndex).trim();
+            // Remove any trailing separators like "|" or newlines from the title
+            paintingTitle = paintingTitle.replaceAll("[|\\n\\r]+$", "").trim();
+        } else if (actualText.contains("|")) {
+            // If no "by:" but has separator, take everything before the last meaningful separator
+            String[] parts = actualText.split("\\|");
+            if (parts.length > 1) {
+                // Take all parts except potentially the last one if it looks like metadata
+                StringBuilder titleBuilder = new StringBuilder();
+                for (int i = 0; i < parts.length - 1; i++) {
+                    if (titleBuilder.length() > 0) titleBuilder.append(" ");
+                    titleBuilder.append(parts[i].trim());
+                }
+                paintingTitle = titleBuilder.toString();
+            }
+        }
+
+        // Clean up the title: replace line breaks with spaces and normalize whitespace
+        paintingTitle = paintingTitle.replaceAll("[\\n\\r]+", " ").replaceAll("\\s+", " ").trim();
+
+        if (paintingTitle.isEmpty()) {
+            System.out.println("Could not extract painting title from sign");
+            return new ArtworkInfo("Unknown", "Unknown", "No painting information available",
+                    "Unknown", "Unknown", "Could not identify painting title");
+        }
+
+        System.out.println("Extracted painting title: " + paintingTitle);
+
+        // Now get the artwork information using the extracted title
+        return getArtwork(paintingTitle);
     }
     @Tool("Get information about a painting")
     public ArtworkInfo getArtwork(String paintingName) {

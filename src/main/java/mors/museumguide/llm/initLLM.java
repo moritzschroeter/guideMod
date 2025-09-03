@@ -38,7 +38,7 @@ public class initLLM {
                     .chatMemory(MessageWindowChatMemory.withMaxMessages(30))
                     .systemMessageProvider(MemoryID -> promptsTypology.getCurrentPrompt())
                     .tools(new functionTools(), new signTools(), new paintingTools(),
-                            new guideTools(), new ClevelandArtApiTools())
+                            new guideTools(), new ApiTools())
                     .build();
             reinitialize();
             System.out.println("LLM initialization complete");
@@ -99,7 +99,7 @@ public class initLLM {
                     .chatMemory(MessageWindowChatMemory.withMaxMessages(30))
                     .systemMessageProvider(MemoryID -> promptsTypology.getCurrentPrompt())
                     .tools(new functionTools(), new signTools(), new paintingTools(),
-                            new guideTools(), new ClevelandArtApiTools())
+                            new guideTools(), new ApiTools())
                     .build();
 
             System.out.println("LLM re-initialization complete");
