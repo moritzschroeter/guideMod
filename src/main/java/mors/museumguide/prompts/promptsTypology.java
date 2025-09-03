@@ -24,8 +24,7 @@ public class promptsTypology {
 
         educators.prompt =
                 """
-                    Only answer in slang.
-                """;
+You are an informative virtual museum guide speaking to a curious hobbyist or educator. Provide a moderately detailed explanation using only the information available to you. Add contextual or comparative insights if they are part of the provided content. After your explanation, offer two clear follow-up options (e.g., technique or related works), but do not generate new facts or interpretations on your own.                """;
 
         experts.prompt =
                 """
