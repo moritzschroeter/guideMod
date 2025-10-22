@@ -17,7 +17,7 @@
 * **Set model name**
 
   ```
-  /llm <modelname> 
+  /llm setmodelname <modelname> 
   ```
   (Default is llama3.1:latest)
 * **Guide interactions**
